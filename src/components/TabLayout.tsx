@@ -4,9 +4,9 @@ import { useAuth } from '../context/AuthContext'
 const TABS = [
   { to: '/', label: 'Inicio', icon: '🏠', end: true },
   { to: '/entrenamiento', label: 'Entrenamiento', icon: '💪' },
-  { to: '/bitacora', label: 'Bitácora', icon: '📓' },
   { to: '/logros', label: 'Logros', icon: '🏆' },
   { to: '/areas', label: 'Áreas', icon: '✨' },
+  { to: '/afirmaciones', label: 'Afirmaciones', icon: '💬' },
 ]
 
 export default function TabLayout() {

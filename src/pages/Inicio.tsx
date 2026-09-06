@@ -1,8 +1,16 @@
+import WeeklyGoalsSection from '../components/WeeklyGoalsSection'
+import DailyLogSection from '../components/DailyLogSection'
+
 export default function Inicio() {
   return (
     <div className="page">
       <h1>Inicio</h1>
-      <p>Aquí irá el resumen general: racha, gemas por dimensión y progreso de metas.</p>
+
+      <WeeklyGoalsSection />
+
+      <p>Aquí irá la tarjeta del programa activo.</p>
+
+      <DailyLogSection />
     </div>
   )
 }
