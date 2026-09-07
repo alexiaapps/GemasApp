@@ -29,7 +29,7 @@ export default function Login() {
   return (
     <div className="auth-screen">
       <form className="auth-form" onSubmit={handleSubmit}>
-        <h1>Gemas</h1>
+        <h1 className="brand-wordmark">Gemas</h1>
         <p className="auth-subtitle">
           {mode === 'signin' ? 'Inicia sesión para continuar' : 'Crea tu cuenta'}
         </p>

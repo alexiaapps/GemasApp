@@ -1,14 +1,41 @@
 :root {
-  color-scheme: light dark;
-  --bg: #0f1115;
-  --surface: #1a1d24;
-  --surface-2: #23272f;
-  --text: #f2f3f5;
-  --text-dim: #9aa0ac;
-  --accent: #6ee7b7;
-  --accent-strong: #34d399;
+  color-scheme: light;
+
+  /* Superficies y texto */
+  --bg: #fff9f5;
+  --surface: #ffffff;
+  --surface-2: #fff3ec;
+  --text: #2e2a33;
+  --text-dim: #8a8290;
   --danger: #f87171;
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --border: rgba(0, 0, 0, 0.08);
+
+  /* Acentos sólidos (para accent-color, outlines, bordes — NUNCA gradientes) */
+  --accent: #6fcf97;
+  --accent-strong: #4ecdc4;
+
+  /* Degradado arcoíris pastel: botones principales y wordmark "gemas" */
+  --gradient-rainbow: linear-gradient(
+    135deg,
+    #ffafc8 0%,
+    #ffcb8e 20%,
+    #ffeb9c 38%,
+    #b4eab8 56%,
+    #9be0d4 72%,
+    #a7cdf2 86%,
+    #cdb4ec 100%
+  );
+
+  /* Bordes muy redondeados + sombra suave para tarjetas */
+  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-sm: 10px;
+  --shadow-card: 0 10px 30px rgba(190, 160, 140, 0.16);
+
+  /* Tipografía redondeada */
+  --font-body: 'Quicksand', system-ui, -apple-system, sans-serif;
+  --font-display: 'Baloo 2', 'Quicksand', system-ui, sans-serif;
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -26,6 +53,25 @@ body {
   color: var(--text);
 }
 
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+/* Wordmark "gemas": degradado arcoíris aplicado al texto */
+.brand-wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  background: var(--gradient-rainbow);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
 /* --- App shell --- */
 .app-shell {
   display: flex;
@@ -39,27 +85,26 @@ body {
   justify-content: space-between;
   padding: 0.9rem 1.2rem;
   background: var(--surface);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .app-title {
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: var(--accent);
+  font-size: 1.3rem;
 }
 
 .signout-btn {
   background: none;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.12);
   color: var(--text-dim);
   padding: 0.35rem 0.8rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
+  font-family: var(--font-body);
 }
 
 .signout-btn:hover {
   color: var(--text);
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(0, 0, 0, 0.25);
 }
 
 .app-content {
@@ -121,7 +166,9 @@ body {
 
 .weekly-card.completed .weekly-check-circle {
   background: var(--dim-color, var(--accent));
-  color: var(--bg);
+  /* Blanco fijo a propósito: debe contrastar contra cualquiera de los 12
+     colores de dimensión, sean claros u oscuros — no depende del tema. */
+  color: #ffffff;
 }
 
 .weekly-card-text {
@@ -130,7 +177,7 @@ body {
 
 .weekly-card.completed .weekly-card-text {
   text-decoration: line-through;
-  color: var(--dim-color, var(--text-dim));
+  color: var(--dim-color);
 }
 
 .weekly-picker {
@@ -178,8 +225,8 @@ body {
 }
 
 .weekly-picker-list button {
-  background: var(--accent-strong);
-  color: #06281c;
+  background: var(--gradient-rainbow);
+  color: var(--text);
   border: none;
   border-radius: 6px;
   padding: 0.3rem 0.6rem;
@@ -294,7 +341,7 @@ body {
 
 .area-new-goal-btn {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid var(--border);
   color: var(--text);
   border-radius: 8px;
   padding: 0.5rem 0.9rem;
@@ -323,15 +370,15 @@ body {
 
 .area-form input {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 0.5rem 0.6rem;
   color: var(--text);
 }
 
 .area-form button[type='submit'] {
-  background: var(--accent-strong);
-  color: #06281c;
+  background: var(--gradient-rainbow);
+  color: var(--text);
   border: none;
   border-radius: 8px;
   padding: 0.6rem;
@@ -430,8 +477,8 @@ body {
 }
 
 .script-draft-actions button {
-  background: var(--accent-strong);
-  color: #06281c;
+  background: var(--gradient-rainbow);
+  color: var(--text);
   border: none;
   border-radius: 8px;
   padding: 0.5rem 0.9rem;
@@ -564,8 +611,8 @@ body {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: var(--accent-strong) !important;
-  color: #06281c !important;
+  background: var(--gradient-rainbow) !important;
+  color: var(--text) !important;
   font-size: 1.2rem !important;
   display: flex;
   align-items: center;
@@ -575,8 +622,8 @@ body {
 .affirmation-record-btn {
   margin-top: 1rem;
   width: 100%;
-  background: var(--accent-strong);
-  color: #06281c;
+  background: var(--gradient-rainbow);
+  color: var(--text);
   border: none;
   border-radius: 10px;
   padding: 0.8rem;
@@ -672,8 +719,8 @@ body {
 }
 
 .teleprompter-controls button {
-  background: var(--accent-strong);
-  color: #06281c;
+  background: var(--gradient-rainbow);
+  color: var(--text);
   border: none;
   border-radius: 10px;
   padding: 0.7rem 1.2rem;
@@ -684,7 +731,7 @@ body {
 .subgoals-section {
   margin-top: 0.7rem;
   padding-top: 0.7rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--border);
 }
 
 .subgoal-list {
@@ -715,7 +762,7 @@ body {
 .gallery-section {
   margin-top: 1.5rem;
   padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--border);
 }
 
 .gallery-cover {
@@ -758,7 +805,7 @@ body {
 .gallery-actions button,
 .gallery-cover button {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid var(--border);
   color: var(--text);
   border-radius: 8px;
   padding: 0.5rem 0.9rem;
@@ -904,7 +951,7 @@ body {
   display: flex;
   justify-content: space-around;
   background: var(--surface);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
   padding: 0.4rem 0 max(0.4rem, env(safe-area-inset-bottom));
   position: sticky;
   bottom: 0;
@@ -919,13 +966,13 @@ body {
   color: var(--text-dim);
   text-decoration: none;
   font-size: 0.7rem;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   min-width: 4rem;
 }
 
 .tab-item.active {
-  color: var(--accent);
-  background: rgba(110, 231, 183, 0.08);
+  color: var(--accent-strong);
+  background: rgba(78, 205, 196, 0.12);
 }
 
 .tab-icon {
@@ -945,7 +992,8 @@ body {
   width: 100%;
   max-width: 360px;
   background: var(--surface);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
   padding: 2rem 1.5rem;
   display: flex;
   flex-direction: column;
@@ -955,7 +1003,7 @@ body {
 .auth-form h1 {
   margin: 0;
   text-align: center;
-  color: var(--accent);
+  font-size: 2rem;
 }
 
 .auth-subtitle {
@@ -975,11 +1023,12 @@ body {
 
 .auth-form input {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-sm);
   padding: 0.6rem 0.7rem;
   color: var(--text);
   font-size: 1rem;
+  font-family: var(--font-body);
 }
 
 .auth-form input:focus {
@@ -988,15 +1037,16 @@ body {
 }
 
 .auth-form button[type='submit'] {
-  background: var(--accent-strong);
-  color: #06281c;
+  background: var(--gradient-rainbow);
+  color: var(--text);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 0.7rem;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 1rem;
   cursor: pointer;
   margin-top: 0.4rem;
+  font-family: var(--font-body);
 }
 
 .auth-form button[type='submit']:disabled {
