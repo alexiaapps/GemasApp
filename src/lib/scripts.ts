@@ -79,11 +79,6 @@ export async function uploadScriptAudio(
     await supabase.storage.from(BUCKET).remove([script.audio_storage_path])
   }
 
-  const { data: authData } = await supabase.auth.getUser()
-  console.log('[uploadScriptAudio] path a subir:', path)
-  console.log('[uploadScriptAudio] userId (parámetro):', userId)
-  console.log('[uploadScriptAudio] auth.uid() real:', authData.user?.id)
-
   const { error: uploadError } = await supabase.storage
     .from(BUCKET)
     .upload(path, blob, { contentType: mimeType, upsert: true })
