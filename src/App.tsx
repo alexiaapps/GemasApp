@@ -4,6 +4,7 @@ import TabLayout from './components/TabLayout'
 import Login from './pages/Login'
 import Inicio from './pages/Inicio'
 import Entrenamiento from './pages/Entrenamiento'
+import ProgramDetail from './pages/ProgramDetail'
 import Logros from './pages/Logros'
 import Areas from './pages/Areas'
 import AreaDetail from './pages/AreaDetail'
@@ -25,6 +26,7 @@ export default function App() {
       <Route element={<TabLayout />}>
         <Route path="/" element={<Inicio />} />
         <Route path="/entrenamiento" element={<Entrenamiento />} />
+        <Route path="/entrenamiento/:programId" element={<ProgramDetail />} />
         <Route path="/logros" element={<Logros />} />
         <Route path="/areas" element={<Areas />} />
         <Route path="/areas/:key" element={<AreaDetail />} />

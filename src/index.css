@@ -1145,3 +1145,415 @@ h4 {
   font-size: 0.85rem;
   margin: 0;
 }
+
+/* --- Entrenamiento: tarjetas de programa --- */
+.program-card {
+  position: relative;
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 1rem 1.1rem;
+  margin: 0.7rem 0;
+}
+
+.program-card-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  padding-right: 1.8rem;
+}
+
+.program-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.program-card-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.program-card-badge {
+  background: var(--gradient-rainbow);
+  color: var(--text);
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+}
+
+.program-card-goal {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  margin: 0.3rem 0;
+}
+
+.program-card-progress {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin: 0.2rem 0 0;
+}
+
+.program-card-menu-btn {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.program-card-menu {
+  position: absolute;
+  top: 2.2rem;
+  right: 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.program-card-menu button {
+  background: none;
+  border: none;
+  padding: 0.6rem 1rem;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text);
+  font-family: var(--font-body);
+  white-space: nowrap;
+}
+
+.program-card-menu button:hover {
+  background: var(--surface-2);
+}
+
+/* --- Entrenamiento: diseñador de semana --- */
+.week-designer-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.8rem 0;
+}
+
+.week-designer-tab {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+.week-designer-tab.active {
+  background: var(--gradient-rainbow);
+  border-color: transparent;
+  font-weight: 700;
+}
+
+.week-designer-label-input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  max-width: 320px;
+  margin-bottom: 0.8rem;
+}
+
+.week-designer-label-input input {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.6rem;
+  color: var(--text);
+}
+
+.week-designer-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1.2rem;
+}
+
+.week-designer-actions button {
+  background: var(--gradient-rainbow);
+  color: var(--text);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.week-designer-actions button:last-child {
+  background: var(--surface-2);
+  font-weight: 400;
+}
+
+/* --- Entrenamiento: editor de día --- */
+.day-editor {
+  max-width: 420px;
+}
+
+.day-editor-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.6rem 0;
+}
+
+.day-editor-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+.day-editor-item-text {
+  flex: 1;
+}
+
+.day-editor-remove {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.day-editor-remove:hover {
+  color: var(--danger);
+}
+
+.day-editor-add {
+  margin-top: 0.8rem;
+}
+
+.day-editor-pending {
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  padding: 0.8rem;
+  margin-top: 0.6rem;
+}
+
+.day-editor-pending-name {
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+
+.day-editor-pending-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.day-editor-pending-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  width: 90px;
+}
+
+.day-editor-pending-fields input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.4rem 0.5rem;
+  color: var(--text);
+  width: 100%;
+}
+
+.day-editor-pending-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.7rem;
+}
+
+.day-editor-pending-actions button {
+  background: var(--accent-strong);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.day-editor-pending-actions button:last-child {
+  background: none;
+  color: var(--text-dim);
+}
+
+/* --- Entrenamiento: selector de ejercicios --- */
+.exercise-picker {
+  position: relative;
+}
+
+.exercise-picker > input {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.7rem;
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+.exercise-picker-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+  z-index: 3;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 0.4rem;
+}
+
+.exercise-picker-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0.5rem 0.6rem;
+  cursor: pointer;
+  color: var(--text);
+  font-family: var(--font-body);
+  border-radius: 8px;
+}
+
+.exercise-picker-option:hover {
+  background: var(--surface-2);
+}
+
+.exercise-picker-type {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+}
+
+.exercise-picker-create {
+  padding: 0.6rem;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  border-top: 1px solid var(--border);
+  margin-top: 0.3rem;
+}
+
+.exercise-picker-create-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.exercise-picker-create-row label {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.exercise-picker-create-row button {
+  background: var(--accent-strong);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.exercise-picker-empty {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  padding: 0.5rem 0.6rem;
+  margin: 0;
+}
+
+/* --- Entrenamiento: detalle de programa --- */
+.program-week {
+  margin: 0.8rem 0;
+}
+
+.program-week-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: var(--surface);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+.program-day-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+}
+
+.program-day-item {
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 0.9rem;
+}
+
+.program-day-item.completed {
+  opacity: 0.7;
+}
+
+.program-day-header {
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.program-day-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+
+.program-day-actions button {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-family: var(--font-body);
+}
+
+.program-day-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
