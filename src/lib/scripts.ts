@@ -1,5 +1,5 @@
 import { audioExtensionFor } from './audio'
-import { BUCKET } from './media'
+import { BUCKET, compressImage } from './media'
 import { supabase } from './supabase'
 
 export interface AffirmationScript {
@@ -10,6 +10,7 @@ export interface AffirmationScript {
   script_text: string
   audio_storage_path: string | null
   audio_duration_sec: number | null
+  cover_image_path: string | null
   created_at: string
 }
 
@@ -86,6 +87,24 @@ export async function uploadScriptAudio(
   const { error: dbError } = await supabase
     .from('affirmation_scripts')
     .update({ audio_storage_path: path, audio_duration_sec: durationSec })
+    .eq('id', script.id)
+  if (dbError) throw dbError
+
+  return path
+}
+
+export async function uploadScriptCover(userId: string, script: AffirmationScript, file: File) {
+  const blob = await compressImage(file)
+  const path = `${userId}/scripts/${script.id}/cover.jpg`
+
+  const { error: uploadError } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, blob, { contentType: 'image/jpeg', upsert: true })
+  if (uploadError) throw uploadError
+
+  const { error: dbError } = await supabase
+    .from('affirmation_scripts')
+    .update({ cover_image_path: path })
     .eq('id', script.id)
   if (dbError) throw dbError
 

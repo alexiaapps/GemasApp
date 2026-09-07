@@ -457,70 +457,183 @@ body {
   width: 100%;
   min-height: 70vh;
   border-radius: 20px;
-  padding: 2.2rem 1.4rem 1.6rem;
+  padding: 2rem 1.2rem 1.4rem;
   display: flex;
   flex-direction: column;
-  color: #1f2430;
-  overflow: hidden;
+  background: var(--surface);
 }
 
-.affirmation-card-delete {
+.affirmation-menu-btn {
   position: absolute;
   top: 0.8rem;
   right: 0.8rem;
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.1);
   border: none;
   border-radius: 50%;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 1.1rem;
+  color: var(--text);
+  z-index: 1;
 }
 
 .affirmation-card-title {
-  font-size: 1.6rem;
+  font-size: 1.3rem;
   font-weight: 700;
   text-align: center;
   margin: 0 0 1rem;
-  font-family: Georgia, 'Times New Roman', serif;
+  padding: 0 2.2rem;
 }
 
-.affirmation-card-scene {
+.affirmation-card-cover {
   flex: 1;
-  overflow-y: auto;
-  font-size: 1rem;
-  line-height: 1.7;
-  white-space: pre-wrap;
-  padding: 0 0.2rem;
-}
-
-.affirmation-card-legend {
-  text-align: center;
-  font-size: 0.8rem;
-  color: #3a3f4d;
-  opacity: 0.8;
-  margin: 1rem 0 0.8rem;
-}
-
-.affirmation-card-actions {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 0.7rem;
+  min-height: 0;
 }
 
-.affirmation-card-actions button {
-  background: rgba(255, 255, 255, 0.6);
-  border: none;
-  border-radius: 8px;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  font-size: 0.85rem;
-  color: #1f2430;
-}
-
-.affirmation-card-audio {
+.affirmation-cover-img {
   width: 100%;
+  max-height: 100%;
+  flex: 1;
+  object-fit: cover;
+  border-radius: 14px;
+  min-height: 220px;
+}
+
+.affirmation-cover-placeholder {
+  width: 100%;
+  flex: 1;
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  border-radius: 14px;
+  color: var(--text-dim);
+}
+
+.affirmation-cover-btn {
+  background: var(--surface-2);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.affirmation-player {
+  margin-top: 1rem;
+}
+
+.affirmation-scrubber {
+  width: 100%;
+  accent-color: var(--accent-strong);
+}
+
+.affirmation-scrubber-times {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-top: 0.2rem;
+}
+
+.affirmation-player-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.4rem;
+  margin-top: 0.6rem;
+}
+
+.affirmation-player-controls button {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+.affirmation-play-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--accent-strong) !important;
+  color: #06281c !important;
+  font-size: 1.2rem !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.affirmation-record-btn {
+  margin-top: 1rem;
+  width: 100%;
+  background: var(--accent-strong);
+  color: #06281c;
+  border: none;
+  border-radius: 10px;
+  padding: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* --- Menú de tres puntitos (sheet) --- */
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 1200;
+}
+
+.sheet-content {
+  background: var(--surface);
+  border-radius: 16px 16px 0 0;
+  padding: 1.2rem 1.2rem 1.6rem;
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.sheet-legend {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin: 0 0 0.3rem;
+}
+
+.sheet-content h3 {
+  margin: 0 0 0.6rem;
+}
+
+.sheet-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.sheet-actions button {
+  background: var(--surface-2);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.6rem;
+  cursor: pointer;
+}
+
+.sheet-danger {
+  color: var(--danger);
+  border-color: var(--danger) !important;
 }
 
 /* --- Teleprompter --- */

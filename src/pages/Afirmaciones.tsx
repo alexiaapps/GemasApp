@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type TouchEvent } from 'react'
+import { useEffect, useRef, useMemo, useState, type FormEvent, type TouchEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
 import AffirmationCard from '../components/AffirmationCard'
 import { getSignedUrls } from '../lib/media'
@@ -7,6 +7,7 @@ import {
   generateAffirmationScript,
   listAllScriptsForUser,
   saveScript,
+  uploadScriptAudio,
   type AffirmationScriptWithGoal,
   type GeneratedScript,
 } from '../lib/scripts'
@@ -18,7 +19,6 @@ export default function Afirmaciones() {
 
   const [goalOptions, setGoalOptions] = useState<GoalOption[]>([])
   const [scripts, setScripts] = useState<AffirmationScriptWithGoal[]>([])
-  const [signedUrls, setSignedUrls] = useState<Map<string, string>>(new Map())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -28,7 +28,16 @@ export default function Afirmaciones() {
   const [saving, setSaving] = useState(false)
 
   const [activeIndex, setActiveIndex] = useState(0)
+  const [coverUrl, setCoverUrl] = useState<string | undefined>(undefined)
   const touchStartX = useRef<number | null>(null)
+
+  // --- Reproductor único para toda la pantalla ---
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const [playingScriptId, setPlayingScriptId] = useState<string | null>(null)
+  const [isPaused, setIsPaused] = useState(true)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [audioLoading, setAudioLoading] = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -58,22 +67,25 @@ export default function Afirmaciones() {
     }
   }, [user])
 
+  const activeScript = scripts[activeIndex] as AffirmationScriptWithGoal | undefined
+
+  // Portada de la tarjeta visible: se pide fresca cada vez que cambia.
   useEffect(() => {
-    const paths = scripts.filter((s) => s.audio_storage_path).map((s) => s.audio_storage_path as string)
-    if (paths.length === 0) {
-      setSignedUrls(new Map())
+    const path = activeScript?.cover_image_path
+    if (!path) {
+      setCoverUrl(undefined)
       return
     }
     let cancelled = false
-    getSignedUrls(paths)
+    getSignedUrls([path])
       .then((map) => {
-        if (!cancelled) setSignedUrls(map)
+        if (!cancelled) setCoverUrl(map.get(path))
       })
       .catch((e) => setError((e as Error).message))
     return () => {
       cancelled = true
     }
-  }, [scripts])
+  }, [activeScript?.cover_image_path])
 
   const selectedGoal = useMemo(
     () => goalOptions.find((g) => g.id === selectedGoalId) ?? null,
@@ -119,7 +131,41 @@ export default function Afirmaciones() {
     }
   }
 
+  function handleCoverUploaded(scriptId: string, path: string) {
+    setScripts((prev) => prev.map((s) => (s.id === scriptId ? { ...s, cover_image_path: path } : s)))
+  }
+
+  async function handleAudioRecorded(
+    script: AffirmationScriptWithGoal,
+    blob: Blob,
+    durationSec: number,
+    mimeType: string,
+  ) {
+    if (!user) return
+    setError(null)
+    try {
+      const path = await uploadScriptAudio(user.id, script, blob, mimeType, durationSec)
+      setScripts((prev) =>
+        prev.map((s) =>
+          s.id === script.id ? { ...s, audio_storage_path: path, audio_duration_sec: durationSec } : s,
+        ),
+      )
+      if (playingScriptId === script.id) {
+        audioRef.current?.pause()
+        setPlayingScriptId(null)
+        setIsPaused(true)
+      }
+    } catch (err) {
+      setError((err as Error).message)
+    }
+  }
+
   function handleDeleted(scriptId: string) {
+    if (playingScriptId === scriptId) {
+      audioRef.current?.pause()
+      setPlayingScriptId(null)
+      setIsPaused(true)
+    }
     setScripts((prev) => {
       const next = prev.filter((s) => s.id !== scriptId)
       setActiveIndex((i) => Math.min(i, Math.max(0, next.length - 1)))
@@ -127,19 +173,88 @@ export default function Afirmaciones() {
     })
   }
 
-  function handleAudioUpdated(scriptId: string, path: string, durationSec: number) {
-    setScripts((prev) =>
-      prev.map((s) =>
-        s.id === scriptId ? { ...s, audio_storage_path: path, audio_duration_sec: durationSec } : s,
-      ),
-    )
+  function findNextPlayableFrom(index: number): number | null {
+    for (let i = index + 1; i < scripts.length; i++) {
+      if (scripts[i].audio_storage_path) return i
+    }
+    return null
   }
 
-  function goPrev() {
+  function findPrevPlayableFrom(index: number): number | null {
+    for (let i = index - 1; i >= 0; i--) {
+      if (scripts[i].audio_storage_path) return i
+    }
+    return null
+  }
+
+  async function playScriptAt(index: number) {
+    const script = scripts[index]
+    if (!script?.audio_storage_path || !audioRef.current) return
+    setError(null)
+    setAudioLoading(true)
+    try {
+      const map = await getSignedUrls([script.audio_storage_path])
+      const url = map.get(script.audio_storage_path)
+      if (!url) throw new Error('No se pudo cargar el audio')
+      audioRef.current.src = url
+      setActiveIndex(index)
+      setPlayingScriptId(script.id)
+      setCurrentTime(0)
+      await audioRef.current.play()
+      setIsPaused(false)
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setAudioLoading(false)
+    }
+  }
+
+  function handlePlayPause() {
+    if (!audioRef.current || !activeScript) return
+    if (playingScriptId === activeScript.id) {
+      if (isPaused) {
+        audioRef.current.play()
+        setIsPaused(false)
+      } else {
+        audioRef.current.pause()
+        setIsPaused(true)
+      }
+    } else {
+      playScriptAt(activeIndex)
+    }
+  }
+
+  function handlePrevPlay() {
+    const idx = findPrevPlayableFrom(activeIndex)
+    if (idx != null) playScriptAt(idx)
+  }
+
+  function handleNextPlay() {
+    const idx = findNextPlayableFrom(activeIndex)
+    if (idx != null) playScriptAt(idx)
+  }
+
+  function handleEnded() {
+    setIsPaused(true)
+    const finishedIndex = scripts.findIndex((s) => s.id === playingScriptId)
+    const idx = finishedIndex >= 0 ? findNextPlayableFrom(finishedIndex) : null
+    if (idx != null) {
+      playScriptAt(idx)
+    } else {
+      setPlayingScriptId(null)
+    }
+  }
+
+  function handleSeek(time: number) {
+    if (audioRef.current) audioRef.current.currentTime = time
+    setCurrentTime(time)
+  }
+
+  function goPrevCard() {
     setActiveIndex((i) => (i - 1 + scripts.length) % scripts.length)
   }
 
-  function goNext() {
+  function goNextCard() {
     setActiveIndex((i) => (i + 1) % scripts.length)
   }
 
@@ -151,8 +266,8 @@ export default function Afirmaciones() {
     if (touchStartX.current == null) return
     const deltaX = e.changedTouches[0].clientX - touchStartX.current
     touchStartX.current = null
-    if (deltaX > SWIPE_THRESHOLD) goPrev()
-    else if (deltaX < -SWIPE_THRESHOLD) goNext()
+    if (deltaX > SWIPE_THRESHOLD) goPrevCard()
+    else if (deltaX < -SWIPE_THRESHOLD) goNextCard()
   }
 
   if (loading) {
@@ -163,8 +278,6 @@ export default function Afirmaciones() {
       </div>
     )
   }
-
-  const activeScript = scripts[activeIndex]
 
   return (
     <div className="page">
@@ -216,34 +329,38 @@ export default function Afirmaciones() {
         {scripts.length === 0 && <p className="subgoal-empty">Todavía no tienes guiones guardados</p>}
 
         {activeScript && user && (
-          <div
-            className="playlist-carousel"
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-          >
-            {scripts.length > 1 && (
-              <button className="lightbox-nav lightbox-prev" onClick={goPrev} aria-label="Anterior">
-                ‹
-              </button>
-            )}
-
+          <div className="playlist-carousel" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
             <AffirmationCard
               key={activeScript.id}
               userId={user.id}
               script={activeScript}
-              audioUrl={activeScript.audio_storage_path ? signedUrls.get(activeScript.audio_storage_path) : undefined}
+              coverUrl={coverUrl}
+              isPlaying={playingScriptId === activeScript.id && !isPaused}
+              isCurrent={playingScriptId === activeScript.id}
+              currentTime={currentTime}
+              duration={duration}
+              audioLoading={audioLoading}
+              onPlayPause={handlePlayPause}
+              onPrev={handlePrevPlay}
+              onNext={handleNextPlay}
+              onSeek={handleSeek}
+              onCoverUploaded={handleCoverUploaded}
+              onAudioRecorded={(blob, durationSec, mimeType) =>
+                handleAudioRecorded(activeScript, blob, durationSec, mimeType)
+              }
               onDeleted={handleDeleted}
-              onAudioUpdated={handleAudioUpdated}
             />
-
-            {scripts.length > 1 && (
-              <button className="lightbox-nav lightbox-next" onClick={goNext} aria-label="Siguiente">
-                ›
-              </button>
-            )}
           </div>
         )}
       </section>
+
+      <audio
+        ref={audioRef}
+        hidden
+        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+        onEnded={handleEnded}
+      />
     </div>
   )
 }
