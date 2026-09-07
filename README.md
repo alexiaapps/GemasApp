@@ -47,7 +47,7 @@ Tracker de entrenamiento y gamificación de vida personal. React + Vite + TypeSc
 
 ## PWA
 
-Configurada con `vite-plugin-pwa` (manifest + service worker con auto-update). Los íconos en `public/pwa-*.png` son placeholders generados por `scripts/make_icons.py` — reemplázalos por el branding final antes de publicar.
+Configurada con `vite-plugin-pwa` (manifest + service worker con auto-update). Los íconos (`public/pwa-192x192.png`, `public/pwa-512x512.png`, `public/apple-touch-icon.png`, `public/favicon.png`) se generan desde el logo real (`scripts/gemas-logo-original.png`) con `node scripts/generate-icons.mjs` (usa `sharp`). Si el logo cambia, reemplaza ese archivo fuente y vuelve a correr el script.
 
 Para probar la instalación en el celular, necesitas servir la build por HTTPS (Vercel lo da gratis) o usar `npm run build && npm run preview` en la misma red y acceder desde el celular a la IP local.
 
