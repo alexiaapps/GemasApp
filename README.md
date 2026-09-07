@@ -1,4 +1,4 @@
-# FitTrack
+# Gemas
 
 Tracker de entrenamiento y gamificación de vida personal. React + Vite + TypeScript + Supabase, configurado como PWA instalable.
 

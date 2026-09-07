@@ -15,7 +15,7 @@ export default function TabLayout() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <span className="app-title">FitTrack</span>
+        <span className="app-title">Gemas</span>
         <button className="signout-btn" onClick={signOut}>
           Salir
         </button>

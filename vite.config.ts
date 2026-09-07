@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
       manifest: {
-        name: 'FitTrack',
-        short_name: 'FitTrack',
+        name: 'Gemas',
+        short_name: 'Gemas',
         description: 'Tracker de entrenamiento y gamificación de vida personal',
         theme_color: '#0f1115',
         background_color: '#0f1115',

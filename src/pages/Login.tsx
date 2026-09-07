@@ -29,7 +29,7 @@ export default function Login() {
   return (
     <div className="auth-screen">
       <form className="auth-form" onSubmit={handleSubmit}>
-        <h1>FitTrack</h1>
+        <h1>Gemas</h1>
         <p className="auth-subtitle">
           {mode === 'signin' ? 'Inicia sesión para continuar' : 'Crea tu cuenta'}
         </p>
