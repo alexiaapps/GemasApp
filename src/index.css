@@ -46,6 +46,8 @@
   /* Tipografía redondeada */
   --font-body: 'Quicksand', system-ui, -apple-system, sans-serif;
   --font-display: 'Baloo 2', 'Quicksand', system-ui, sans-serif;
+  /* Serif itálica elegante, solo para el título de la tarjeta de afirmación */
+  --font-affirmation-title: 'Playfair Display', Georgia, 'Times New Roman', serif;
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
 }
@@ -546,51 +548,54 @@ h4 {
   background: rgba(255, 255, 255, 0.55);
   border: none;
   border-radius: 50%;
-  width: 34px;
-  height: 34px;
+  width: 26px;
+  height: 26px;
   cursor: pointer;
-  font-size: 1.1rem;
+  font-size: 0.85rem;
   color: var(--text);
   z-index: 1;
 }
 
 .affirmation-card-title {
-  font-size: 1.3rem;
-  font-weight: 700;
-  text-align: center;
-  margin: 0 0 1rem;
-  padding: 0 2.2rem;
+  font-family: var(--font-affirmation-title);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 1.9rem;
+  line-height: 1.25;
+  text-align: left;
+  margin: 0.4rem 2rem 1.2rem 0;
 }
 
 .affirmation-card-cover {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.7rem;
-  min-height: 0;
+  width: 100%;
+  aspect-ratio: 1 / 1;
 }
 
 .affirmation-cover-img {
   width: 100%;
-  max-height: 100%;
-  flex: 1;
+  height: 100%;
   object-fit: cover;
   border-radius: 14px;
-  min-height: 220px;
+  display: block;
 }
 
 .affirmation-cover-placeholder {
   width: 100%;
-  flex: 1;
-  min-height: 220px;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--surface-2);
   border-radius: 14px;
   color: var(--text-dim);
+}
+
+.affirmation-card-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.7rem;
 }
 
 .affirmation-cover-btn {
@@ -603,8 +608,28 @@ h4 {
   font-size: 0.8rem;
 }
 
+/* Píldora translúcida — forma principal de leer el guion completo */
+.affirmation-read-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 1.1rem;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
 .affirmation-player {
-  margin-top: 1rem;
+  margin-top: auto;
+  padding-top: 1.2rem;
 }
 
 .affirmation-scrubber {
@@ -613,43 +638,51 @@ h4 {
 }
 
 .affirmation-scrubber-times {
-  display: flex;
-  justify-content: space-between;
+  text-align: center;
   font-size: 0.75rem;
   color: var(--text-dim);
-  margin-top: 0.2rem;
+  margin-top: 0.3rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .affirmation-player-controls {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1.4rem;
-  margin-top: 0.6rem;
+  gap: 1.3rem;
+  margin: 0.7rem auto 0;
+  width: fit-content;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: 999px;
+  padding: 0.5rem 1.3rem;
 }
 
 .affirmation-player-controls button {
   background: none;
   border: none;
   color: var(--text);
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   cursor: pointer;
 }
 
 .affirmation-play-btn {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: var(--gradient-rainbow) !important;
+  /* Blanco sólido a propósito (no el degradado) — combina con la píldora translúcida, como en la referencia */
+  background: #ffffff !important;
   color: var(--text) !important;
-  font-size: 1.2rem !important;
+  font-size: 1.1rem !important;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .affirmation-record-btn {
-  margin-top: 1rem;
+  margin-top: auto;
   width: 100%;
   background: var(--gradient-rainbow);
   color: var(--text);

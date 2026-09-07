@@ -100,6 +100,9 @@ export default function AffirmationCard({
         ) : (
           <div className="affirmation-cover-placeholder">Sin portada</div>
         )}
+      </div>
+
+      <div className="affirmation-card-actions-row">
         <input
           ref={coverInputRef}
           type="file"
@@ -114,6 +117,9 @@ export default function AffirmationCard({
           disabled={coverBusy}
         >
           {coverBusy ? 'Subiendo...' : coverUrl ? 'Cambiar portada' : '+ Subir portada'}
+        </button>
+        <button type="button" className="affirmation-read-btn" onClick={() => setShowMenu(true)}>
+          📖 Leer guion
         </button>
       </div>
 
@@ -130,8 +136,7 @@ export default function AffirmationCard({
             className="affirmation-scrubber"
           />
           <div className="affirmation-scrubber-times">
-            <span>{formatTime(isCurrent ? currentTime : 0)}</span>
-            <span>{formatTime(isCurrent ? duration : 0)}</span>
+            {formatTime(isCurrent ? currentTime : 0)} / {formatTime(isCurrent ? duration : 0)}
           </div>
           <div className="affirmation-player-controls">
             <button type="button" onClick={onPrev} aria-label="Anterior">
