@@ -2,7 +2,6 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import AffirmationGallery from '../components/AffirmationGallery'
-import AffirmationScriptSection from '../components/AffirmationScriptSection'
 import {
   completeGoal,
   completeSubgoal,
@@ -265,18 +264,15 @@ export default function AreaDetail() {
             </div>
 
             {expandedGoals[goal.id] && (
-              <>
-                <SubgoalsSection
-                  goal={goal}
-                  subgoals={subgoalsByGoal[goal.id] ?? []}
-                  onCreateSubgoal={(e) => handleCreateSubgoal(goal.id, e)}
-                  onCompleteSubgoal={(subgoal) =>
-                    handleCompleteSubgoal(goal.id, subgoal, goal.dimension_key)
-                  }
-                  onDeleteSubgoal={(subgoal) => handleDeleteSubgoal(goal.id, subgoal)}
-                />
-                <AffirmationScriptSection goal={goal} dimensionLabel={dimension?.label ?? key ?? ''} />
-              </>
+              <SubgoalsSection
+                goal={goal}
+                subgoals={subgoalsByGoal[goal.id] ?? []}
+                onCreateSubgoal={(e) => handleCreateSubgoal(goal.id, e)}
+                onCompleteSubgoal={(subgoal) =>
+                  handleCompleteSubgoal(goal.id, subgoal, goal.dimension_key)
+                }
+                onDeleteSubgoal={(subgoal) => handleDeleteSubgoal(goal.id, subgoal)}
+              />
             )}
           </li>
         ))}

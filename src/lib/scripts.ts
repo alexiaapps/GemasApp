@@ -1,3 +1,5 @@
+import { audioExtensionFor } from './audio'
+import { BUCKET } from './media'
 import { supabase } from './supabase'
 
 export interface AffirmationScript {
@@ -6,7 +8,20 @@ export interface AffirmationScript {
   goal_id: string
   title: string
   script_text: string
+  audio_storage_path: string | null
+  audio_duration_sec: number | null
   created_at: string
+}
+
+export interface AffirmationScriptGoal {
+  id: string
+  text: string
+  dimension_key: string
+  dimension: { label: string; emoji: string } | null
+}
+
+export interface AffirmationScriptWithGoal extends AffirmationScript {
+  goal: AffirmationScriptGoal | null
 }
 
 export interface GeneratedScript {
@@ -14,15 +29,20 @@ export interface GeneratedScript {
   script: string
 }
 
-export async function listScriptsByGoal(goalId: string) {
+const SCRIPT_WITH_GOAL_SELECT = `
+  *,
+  goal:goals ( id, text, dimension_key, dimension:dimensions ( label, emoji ) )
+`
+
+export async function listAllScriptsForUser(userId: string) {
   const { data, error } = await supabase
     .from('affirmation_scripts')
-    .select('*')
-    .eq('goal_id', goalId)
+    .select(SCRIPT_WITH_GOAL_SELECT)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false })
 
   if (error) throw error
-  return (data ?? []) as AffirmationScript[]
+  return (data ?? []) as unknown as AffirmationScriptWithGoal[]
 }
 
 export async function saveScript(userId: string, goalId: string, title: string, scriptText: string) {
@@ -36,9 +56,40 @@ export async function saveScript(userId: string, goalId: string, title: string, 
   return data as AffirmationScript
 }
 
-export async function deleteScript(scriptId: string) {
-  const { error } = await supabase.from('affirmation_scripts').delete().eq('id', scriptId)
+export async function deleteScript(script: AffirmationScript) {
+  if (script.audio_storage_path) {
+    await supabase.storage.from(BUCKET).remove([script.audio_storage_path])
+  }
+
+  const { error } = await supabase.from('affirmation_scripts').delete().eq('id', script.id)
   if (error) throw error
+}
+
+export async function uploadScriptAudio(
+  userId: string,
+  script: AffirmationScript,
+  blob: Blob,
+  mimeType: string,
+  durationSec: number,
+) {
+  const path = `${userId}/scripts/${script.id}.${audioExtensionFor(mimeType)}`
+
+  if (script.audio_storage_path && script.audio_storage_path !== path) {
+    await supabase.storage.from(BUCKET).remove([script.audio_storage_path])
+  }
+
+  const { error: uploadError } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, blob, { contentType: mimeType, upsert: true })
+  if (uploadError) throw uploadError
+
+  const { error: dbError } = await supabase
+    .from('affirmation_scripts')
+    .update({ audio_storage_path: path, audio_duration_sec: durationSec })
+    .eq('id', script.id)
+  if (dbError) throw dbError
+
+  return path
 }
 
 const GENERATE_TIMEOUT_MS = 30000

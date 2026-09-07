@@ -45,6 +45,7 @@ export interface GoalOption {
   dimension_key: string
   dimension: {
     label: string
+    emoji: string
     color_hex: string
   } | null
 }
@@ -84,7 +85,7 @@ export async function listAssignableSubgoals(userId: string, weekStart: string) 
 export async function listGoalOptions(userId: string) {
   const { data, error } = await supabase
     .from('goals')
-    .select('id, text, dimension_key, dimension:dimensions ( label, color_hex )')
+    .select('id, text, dimension_key, dimension:dimensions ( label, emoji, color_hex )')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
 
