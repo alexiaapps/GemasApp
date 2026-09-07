@@ -398,6 +398,70 @@ body {
   flex: 1;
 }
 
+/* --- Affirmation scripts --- */
+.script-section {
+  margin-top: 0.7rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.script-draft,
+.script-item {
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  margin-top: 0.7rem;
+}
+
+.script-draft h4,
+.script-item h4 {
+  margin: 0 0 0.5rem;
+}
+
+.script-text {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.script-draft-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+
+.script-draft-actions button {
+  background: var(--accent-strong);
+  color: #06281c;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.script-draft-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.script-list {
+  list-style: none;
+  padding: 0;
+}
+
+.script-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.script-item-header h4 {
+  flex: 1;
+}
+
 .subgoals-section {
   margin-top: 0.7rem;
   padding-top: 0.7rem;
