@@ -15,7 +15,10 @@ export default function TabLayout() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <span className="app-title brand-wordmark">Gemas</span>
+        <div className="app-brand">
+          <img src="/logo-brand.png" alt="" className="app-logo" />
+          <span className="app-title brand-wordmark">Gemas</span>
+        </div>
         <button className="signout-btn" onClick={signOut}>
           Salir
         </button>

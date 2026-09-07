@@ -12,6 +12,8 @@ const targets = [
   { file: 'pwa-512x512.png', size: 512 },
   { file: 'apple-touch-icon.png', size: 180 },
   { file: 'favicon.png', size: 64 },
+  // Para mostrar en la UI (login, header) — no confundir con los íconos de instalación de arriba.
+  { file: 'logo-brand.png', size: 300 },
 ]
 
 for (const { file, size } of targets) {
