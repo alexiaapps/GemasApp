@@ -130,9 +130,14 @@ export default function Entrenamiento() {
       <h1>Entrenamiento</h1>
       {error && <p className="auth-error">{error}</p>}
 
-      <button type="button" className="area-new-goal-btn" onClick={() => setStep('new-program')}>
-        + Nuevo programa
-      </button>
+      <div className="entrenamiento-top-actions">
+        <button type="button" className="area-new-goal-btn" onClick={() => setStep('new-program')}>
+          + Nuevo programa
+        </button>
+        <Link to="/entrenamiento/historial" className="entrenamiento-history-link">
+          Ver historial
+        </Link>
+      </div>
 
       {activePrograms.map((program) => (
         <ProgramCard

@@ -163,9 +163,9 @@ export default function ProgramDetail() {
                         <button type="button" onClick={() => setEditingDayId(day.id)}>
                           Editar
                         </button>
-                        <button type="button" disabled title="Disponible próximamente">
+                        <Link to={`/entrenamiento/sesion/${day.id}`} className="program-day-train-link">
                           Ir a entrenar
-                        </button>
+                        </Link>
                       </div>
                     )}
                   </li>

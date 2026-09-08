@@ -285,3 +285,37 @@ export async function addExtraWeek(program: Program) {
     .eq('id', program.id)
   if (updateError) throw updateError
 }
+
+export async function getProgramDay(programDayId: string) {
+  const { data, error } = await supabase
+    .from('program_days')
+    .select(
+      `id, program_id, week, day_number, label, completed, completed_at,
+       day_exercises ( id, program_day_id, exercise_id, sets, target_reps, rir, rest_seconds, order_index, exercise:exercises ( id, user_id, name, default_type, dimension_key, created_at ) )`,
+    )
+    .eq('id', programDayId)
+    .single()
+
+  if (error) throw error
+  return data as unknown as ProgramDay & { day_exercises: DayExercise[] }
+}
+
+export async function markDayCompleted(programDayId: string) {
+  const { error } = await supabase
+    .from('program_days')
+    .update({ completed: true, completed_at: new Date().toISOString() })
+    .eq('id', programDayId)
+  if (error) throw error
+}
+
+export async function isWeekFullyCompleted(programId: string, week: number) {
+  const { data, error } = await supabase
+    .from('program_days')
+    .select('completed')
+    .eq('program_id', programId)
+    .eq('week', week)
+
+  if (error) throw error
+  const rows = data ?? []
+  return rows.length > 0 && rows.every((d) => d.completed)
+}

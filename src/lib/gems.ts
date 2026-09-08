@@ -27,5 +27,7 @@ export async function awardGemOnce(
     source_id: sourceId,
   })
 
-  if (insertError) throw insertError
+  // 23505 = unique_violation. Algunos sources (ej. week_bonus) tienen un índice único en la
+  // base de datos además de este chequeo — si alguien más ganó la carrera, no es un error real.
+  if (insertError && insertError.code !== '23505') throw insertError
 }

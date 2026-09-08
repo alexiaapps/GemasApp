@@ -1557,3 +1557,234 @@ h4 {
   opacity: 0.5;
   cursor: default;
 }
+
+.program-day-train-link {
+  display: inline-flex;
+  align-items: center;
+  background: var(--gradient-rainbow);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.entrenamiento-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.entrenamiento-history-link {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  text-decoration: underline;
+}
+
+/* --- Entrenamiento: sesión de entrenamiento (Fase B) --- */
+.training-day-complete {
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.training-exercise-card {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 1rem 1.1rem;
+  margin: 0.8rem 0;
+}
+
+.training-notes-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin: 0.6rem 0;
+}
+
+.training-notes-label textarea {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.6rem;
+  color: var(--text);
+  font-family: var(--font-body);
+  resize: vertical;
+}
+
+.training-set-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.training-set-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+.training-set-row.logged {
+  color: var(--text-dim);
+}
+
+.training-set-number {
+  font-weight: 600;
+  color: var(--text);
+  min-width: 3.2rem;
+}
+
+.training-input-sm {
+  width: 70px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.35rem 0.5rem;
+  color: var(--text);
+}
+
+.training-set-row select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.35rem 0.4rem;
+  color: var(--text);
+}
+
+.training-check-btn {
+  background: var(--accent-strong);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-left: auto;
+}
+
+.training-check-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.training-progress-badge {
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.75rem;
+  color: var(--accent-strong);
+}
+
+.training-set-check {
+  margin-left: auto;
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+/* --- Timer de descanso --- */
+.rest-timer-wrapper {
+  position: sticky;
+  bottom: 4.5rem;
+  margin-top: 1rem;
+}
+
+.rest-timer {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 0.8rem 1rem;
+}
+
+.rest-timer-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.rest-timer-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--surface-2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.rest-timer-fill {
+  height: 100%;
+  background: var(--gradient-rainbow);
+  transition: width 1s linear;
+}
+
+.rest-timer-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+  justify-content: center;
+}
+
+.rest-timer-actions button {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-family: var(--font-body);
+}
+
+/* --- Historial de entrenamiento --- */
+.history-date-group {
+  margin: 1rem 0;
+}
+
+.history-log-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.history-log-item {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+.history-log-exercise {
+  font-weight: 700;
+}
+
+.history-log-details {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+
+.history-log-notes {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  font-style: italic;
+  margin-top: 0.2rem;
+}
