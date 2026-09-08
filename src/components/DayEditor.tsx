@@ -1,3 +1,4 @@
+import { Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import type { Exercise } from '../lib/exercises'
 import type { DayExercisePlan } from '../lib/programs'
@@ -62,7 +63,7 @@ export default function DayEditor({ userId, exercises, onChange }: Props) {
                 onClick={() => handleRemove(index)}
                 aria-label="Quitar ejercicio"
               >
-                🗑
+                <Trash2 size={15} strokeWidth={1.75} />
               </button>
             </li>
           ))}

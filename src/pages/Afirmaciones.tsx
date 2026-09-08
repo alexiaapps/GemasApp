@@ -1,3 +1,4 @@
+import { Loader2, Wand2 } from 'lucide-react'
 import { useEffect, useRef, useMemo, useState, type FormEvent, type TouchEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
 import AffirmationCard from '../components/AffirmationCard'
@@ -301,7 +302,17 @@ export default function Afirmaciones() {
             </select>
           </label>
           <button type="submit" disabled={generating || !selectedGoalId}>
-            {generating ? 'Generando...' : '✨ Generar'}
+            {generating ? (
+              <>
+                <Loader2 size={16} strokeWidth={1.75} className="icon-spin" />
+                Generando...
+              </>
+            ) : (
+              <>
+                <Wand2 size={16} strokeWidth={1.75} />
+                Generar
+              </>
+            )}
           </button>
         </form>
 

@@ -1,3 +1,14 @@
+import {
+  ArrowLeft,
+  Check,
+  CheckCircle2,
+  Clock,
+  History,
+  Layers,
+  Loader2,
+  RotateCcw,
+  Zap,
+} from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -19,7 +30,6 @@ interface RowState {
   reps: string
   durationSec: string
   weight: string
-  weightUnit: WeightUnit
   rir: string
 }
 
@@ -28,7 +38,13 @@ function rowKey(exerciseId: string, setNumber: number) {
 }
 
 function defaultRowState(): RowState {
-  return { reps: '', durationSec: '', weight: '', weightUnit: 'kg', rir: '' }
+  return { reps: '', durationSec: '', weight: '', rir: '' }
+}
+
+function formatRestLabel(seconds: number | null): string {
+  if (seconds == null) return '—'
+  if (seconds >= 60) return `${Math.round(seconds / 60)} min`
+  return `${seconds}s`
 }
 
 export default function TrainingSession() {
@@ -40,7 +56,9 @@ export default function TrainingSession() {
   const [error, setError] = useState<string | null>(null)
 
   const [loggedSets, setLoggedSets] = useState<Map<string, ExerciseLog>>(new Map())
+  const [previousSets, setPreviousSets] = useState<Map<string, ExerciseLog>>(new Map())
   const [rowInputs, setRowInputs] = useState<Record<string, RowState>>({})
+  const [unitByExercise, setUnitByExercise] = useState<Record<string, WeightUnit>>({})
   const [notesByExercise, setNotesByExercise] = useState<Record<string, string>>({})
   const [progressMessages, setProgressMessages] = useState<Record<string, string | null>>({})
   const [savingKey, setSavingKey] = useState<string | null>(null)
@@ -55,7 +73,7 @@ export default function TrainingSession() {
   }, [dayId])
 
   async function load() {
-    if (!dayId) return
+    if (!dayId || !user) return
     setLoading(true)
     setError(null)
     try {
@@ -68,6 +86,21 @@ export default function TrainingSession() {
         map.set(rowKey(log.exercise_id, log.set_number), log)
       }
       setLoggedSets(map)
+
+      // "Sem. anterior": el log más reciente de cada exercise+set, de cualquier sesión pasada.
+      const lookups: Promise<void>[] = []
+      const prevMap = new Map<string, ExerciseLog>()
+      for (const ex of dayData.day_exercises) {
+        for (let setNumber = 1; setNumber <= ex.sets; setNumber++) {
+          lookups.push(
+            getMostRecentLogForSet(user.id, ex.exercise_id, setNumber).then((prev) => {
+              if (prev) prevMap.set(rowKey(ex.exercise_id, setNumber), prev)
+            }),
+          )
+        }
+      }
+      await Promise.all(lookups)
+      setPreviousSets(prevMap)
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -80,6 +113,12 @@ export default function TrainingSession() {
     [day],
   )
 
+  const totalExercises = day?.day_exercises.length ?? 0
+  const completedExercises = useMemo(() => {
+    if (!day) return 0
+    return day.day_exercises.filter((ex) => loggedSets.has(rowKey(ex.exercise_id, ex.sets))).length
+  }, [day, loggedSets])
+
   function getRowState(key: string): RowState {
     return rowInputs[key] ?? defaultRowState()
   }
@@ -88,11 +127,16 @@ export default function TrainingSession() {
     setRowInputs((prev) => ({ ...prev, [key]: { ...getRowState(key), ...patch } }))
   }
 
+  function getUnit(exerciseId: string): WeightUnit {
+    return unitByExercise[exerciseId] ?? 'kg'
+  }
+
   async function handleRegisterSet(exercise: DayExercise, setNumber: number) {
     if (!user || !day) return
     const key = rowKey(exercise.exercise_id, setNumber)
     const row = getRowState(key)
     const exerciseType = exercise.exercise?.default_type ?? 'reps'
+    const unit = getUnit(exercise.exercise_id)
     const isLastSetOfExercise = setNumber === exercise.sets
 
     setSavingKey(key)
@@ -104,7 +148,7 @@ export default function TrainingSession() {
         reps: exerciseType === 'reps' && row.reps.trim() !== '' ? Number(row.reps) : null,
         durationSec: exerciseType === 'time' && row.durationSec.trim() !== '' ? Number(row.durationSec) : null,
         weight: row.weight.trim() !== '' ? Number(row.weight) : null,
-        weightUnit: row.weight.trim() !== '' ? row.weightUnit : null,
+        weightUnit: row.weight.trim() !== '' ? unit : null,
         rir: exerciseType === 'reps' && row.rir.trim() !== '' ? Number(row.rir) : null,
         notes: isLastSetOfExercise ? (notesByExercise[exercise.exercise_id]?.trim() || null) : null,
       }
@@ -164,17 +208,35 @@ export default function TrainingSession() {
   }
 
   return (
-    <div className="page">
-      <Link to={`/entrenamiento/${day.program_id}`} className="area-back">
-        ← Volver al programa
-      </Link>
+    <div className="page training-page">
+      <div className="training-header">
+        <Link to={`/entrenamiento/${day.program_id}`} className="training-header-back" aria-label="Volver">
+          <ArrowLeft size={22} strokeWidth={1.75} />
+        </Link>
+        <span className="training-header-title">{day.label ?? `Día ${day.day_number}`}</span>
+        <Link to={`/entrenamiento/${day.program_id}`} className="training-header-finish">
+          <CheckCircle2 size={16} strokeWidth={1.75} />
+          Finalizar
+        </Link>
+      </div>
 
-      <h1>{day.label ?? `Día ${day.day_number}`}</h1>
+      <div className="training-counter-row">
+        <span className="training-exercise-counter">
+          {completedExercises}/{totalExercises} ejercicios
+        </span>
+        <RestTimer
+          seconds={activeTimer?.seconds ?? null}
+          resetKey={activeTimer?.key}
+          onDone={() => setActiveTimer(null)}
+        />
+      </div>
+
       {error && <p className="auth-error">{error}</p>}
 
       {dayCompleted && (
         <p className="training-day-complete">
-          ✅ Día completado {weekBonusMessage ? `· ${weekBonusMessage}` : '· +5 gemas'}
+          <CheckCircle2 size={16} strokeWidth={1.75} /> Día completado{' '}
+          {weekBonusMessage ? `· ${weekBonusMessage}` : '· +5 gemas'}
         </p>
       )}
 
@@ -184,29 +246,85 @@ export default function TrainingSession() {
           const exerciseType = exercise.exercise?.default_type ?? 'reps'
           const lastSetKey = rowKey(exercise.exercise_id, exercise.sets)
           const exerciseFullyLogged = loggedSets.has(lastSetKey)
+          const unit = getUnit(exercise.exercise_id)
+
+          const previousLines = Array.from({ length: exercise.sets }, (_, i) => i + 1)
+            .map((setNumber) => ({ setNumber, prev: previousSets.get(rowKey(exercise.exercise_id, setNumber)) }))
+            .filter((row): row is { setNumber: number; prev: ExerciseLog } => row.prev != null)
 
           return (
             <div key={exercise.id} className="training-exercise-card">
-              <h3>{exercise.exercise?.name ?? 'Ejercicio'}</h3>
-              <p className="auth-subtitle">
-                {exercise.sets} sets · {exercise.target_reps}
-                {exercise.rir != null ? ` · RIR objetivo ${exercise.rir}` : ''}
-                {exercise.rest_seconds != null ? ` · ${exercise.rest_seconds}s descanso` : ''}
-              </p>
+              <div className="training-exercise-title-row">
+                <h3 className="training-exercise-title">{exercise.exercise?.name ?? 'Ejercicio'}</h3>
+              </div>
 
-              <label className="training-notes-label">
-                Notas del ejercicio (opcional)
-                <textarea
-                  rows={2}
-                  disabled={exerciseFullyLogged}
-                  value={notesByExercise[exercise.exercise_id] ?? ''}
-                  onChange={(e) =>
-                    setNotesByExercise((prev) => ({ ...prev, [exercise.exercise_id]: e.target.value }))
-                  }
-                />
-              </label>
+              <div className="training-stats-row">
+                <div className="training-stat">
+                  <Layers size={16} strokeWidth={1.75} />
+                  <span className="training-stat-label">Series</span>
+                  <span className="training-stat-value">{exercise.sets}</span>
+                </div>
+                <div className="training-stat">
+                  <RotateCcw size={16} strokeWidth={1.75} />
+                  <span className="training-stat-label">{exerciseType === 'time' ? 'Segundos' : 'Reps'}</span>
+                  <span className="training-stat-value">{exercise.target_reps}</span>
+                </div>
+                {exerciseType === 'reps' && exercise.rir != null && (
+                  <div className="training-stat">
+                    <Zap size={16} strokeWidth={1.75} />
+                    <span className="training-stat-label">RIR</span>
+                    <span className="training-stat-value">{exercise.rir}</span>
+                  </div>
+                )}
+                <div className="training-stat">
+                  <Clock size={16} strokeWidth={1.75} />
+                  <span className="training-stat-label">Descanso</span>
+                  <span className="training-stat-value">{formatRestLabel(exercise.rest_seconds)}</span>
+                </div>
+              </div>
 
-              <ul className="training-set-list">
+              {previousLines.length > 0 && (
+                <div className="training-previous-section">
+                  <p className="training-previous-label">
+                    <History size={13} strokeWidth={1.75} /> Sem. anterior
+                  </p>
+                  {previousLines.map(({ setNumber, prev }) => (
+                    <p key={setNumber} className="training-previous-line">
+                      S{setNumber} · {prev.weight != null ? `${prev.weight}${prev.weight_unit}` : 'sin peso'} ·{' '}
+                      {exerciseType === 'time' ? `${prev.duration_sec ?? '—'}s` : `${prev.reps ?? '—'}r`}
+                      {prev.rir != null ? ` · RIR ${prev.rir}` : ''}
+                    </p>
+                  ))}
+                </div>
+              )}
+
+              <div className="training-grid">
+                <div className="training-grid-header">
+                  <span className="training-grid-col-serie">Serie</span>
+                  <span className="training-grid-col-peso">
+                    Peso
+                    <span className="training-unit-toggle">
+                      <button
+                        type="button"
+                        className={unit === 'kg' ? 'active' : ''}
+                        onClick={() => setUnitByExercise((prev) => ({ ...prev, [exercise.exercise_id]: 'kg' }))}
+                      >
+                        kg
+                      </button>
+                      <button
+                        type="button"
+                        className={unit === 'lb' ? 'active' : ''}
+                        onClick={() => setUnitByExercise((prev) => ({ ...prev, [exercise.exercise_id]: 'lb' }))}
+                      >
+                        lb
+                      </button>
+                    </span>
+                  </span>
+                  <span>{exerciseType === 'time' ? 'Segundos' : 'Reps'}</span>
+                  {exerciseType === 'reps' ? <span>RIR</span> : <span />}
+                  <span />
+                </div>
+
                 {Array.from({ length: exercise.sets }, (_, i) => i + 1).map((setNumber) => {
                   const key = rowKey(exercise.exercise_id, setNumber)
                   const logged = loggedSets.get(key)
@@ -215,98 +333,89 @@ export default function TrainingSession() {
 
                   if (logged) {
                     return (
-                      <li key={key} className="training-set-row logged">
-                        <span>Set {setNumber}: </span>
-                        {exerciseType === 'reps' ? (
-                          <span>
-                            {logged.reps ?? '—'} reps
-                            {logged.weight != null ? ` · ${logged.weight}${logged.weight_unit}` : ''}
-                            {logged.rir != null ? ` · RIR ${logged.rir}` : ''}
-                          </span>
-                        ) : (
-                          <span>
-                            {logged.duration_sec ?? '—'}s
-                            {logged.weight != null ? ` · ${logged.weight}${logged.weight_unit}` : ''}
-                          </span>
-                        )}
+                      <div key={key} className="training-grid-row logged">
+                        <span className="training-grid-col-serie">{setNumber}</span>
+                        <span className="training-grid-col-peso">
+                          {logged.weight != null ? `${logged.weight}${logged.weight_unit}` : '—'}
+                        </span>
+                        <span>{exerciseType === 'time' ? logged.duration_sec ?? '—' : logged.reps ?? '—'}</span>
+                        {exerciseType === 'reps' ? <span>{logged.rir ?? '—'}</span> : <span />}
+                        <span className="training-set-check">
+                          <Check size={16} strokeWidth={2.5} />
+                        </span>
                         {message && <span className="training-progress-badge">{message}</span>}
-                        <span className="training-set-check">✓</span>
-                      </li>
+                      </div>
                     )
                   }
 
                   return (
-                    <li key={key} className="training-set-row">
-                      <span className="training-set-number">Set {setNumber}</span>
-
+                    <div key={key} className="training-grid-row">
+                      <span className="training-grid-col-serie">{setNumber}</span>
+                      <input
+                        type="number"
+                        placeholder="—"
+                        className="training-grid-input training-grid-col-peso"
+                        value={row.weight}
+                        onChange={(e) => updateRow(key, { weight: e.target.value })}
+                      />
                       {exerciseType === 'reps' ? (
                         <input
                           type="number"
-                          placeholder="Reps"
-                          className="training-input-sm"
+                          placeholder="—"
+                          className="training-grid-input"
                           value={row.reps}
                           onChange={(e) => updateRow(key, { reps: e.target.value })}
                         />
                       ) : (
                         <input
                           type="number"
-                          placeholder="Segundos"
-                          className="training-input-sm"
+                          placeholder="—"
+                          className="training-grid-input"
                           value={row.durationSec}
                           onChange={(e) => updateRow(key, { durationSec: e.target.value })}
                         />
                       )}
-
-                      <input
-                        type="number"
-                        placeholder="Peso"
-                        className="training-input-sm"
-                        value={row.weight}
-                        onChange={(e) => updateRow(key, { weight: e.target.value })}
-                      />
-                      <select
-                        value={row.weightUnit}
-                        onChange={(e) => updateRow(key, { weightUnit: e.target.value as WeightUnit })}
-                      >
-                        <option value="kg">kg</option>
-                        <option value="lb">lb</option>
-                      </select>
-
-                      {exerciseType === 'reps' && (
+                      {exerciseType === 'reps' ? (
                         <input
                           type="number"
-                          placeholder="RIR"
-                          className="training-input-sm"
+                          placeholder="—"
+                          className="training-grid-input"
                           value={row.rir}
                           onChange={(e) => updateRow(key, { rir: e.target.value })}
                         />
+                      ) : (
+                        <span />
                       )}
-
                       <button
                         type="button"
                         className="training-check-btn"
                         onClick={() => handleRegisterSet(exercise, setNumber)}
                         disabled={savingKey === key}
                       >
-                        {savingKey === key ? '…' : '✓'}
+                        {savingKey === key ? (
+                          <Loader2 size={16} strokeWidth={1.75} className="icon-spin" />
+                        ) : (
+                          <Check size={16} strokeWidth={2.5} />
+                        )}
                       </button>
-                    </li>
+                    </div>
                   )
                 })}
-              </ul>
+              </div>
+
+              <textarea
+                className="training-notes-textarea"
+                rows={2}
+                placeholder="Sensaciones, qué fue difícil, notas para el coach…"
+                disabled={exerciseFullyLogged}
+                value={notesByExercise[exercise.exercise_id] ?? ''}
+                onChange={(e) =>
+                  setNotesByExercise((prev) => ({ ...prev, [exercise.exercise_id]: e.target.value }))
+                }
+              />
             </div>
           )
         })}
-
-      {activeTimer && (
-        <div className="rest-timer-wrapper">
-          <RestTimer
-            key={activeTimer.key}
-            seconds={activeTimer.seconds}
-            onDone={() => setActiveTimer(null)}
-          />
-        </div>
-      )}
     </div>
   )
 }

@@ -1,3 +1,4 @@
+import { BookOpen, Loader2, Mic, MoreHorizontal, Pause, Play, SkipBack, SkipForward } from 'lucide-react'
 import { useRef, useState, type ChangeEvent } from 'react'
 import { deleteScript, uploadScriptCover, type AffirmationScriptWithGoal } from '../lib/scripts'
 import TeleprompterRecorder from './TeleprompterRecorder'
@@ -89,7 +90,7 @@ export default function AffirmationCard({
         onClick={() => setShowMenu(true)}
         aria-label="Más opciones"
       >
-        ⋯
+        <MoreHorizontal size={16} strokeWidth={1.75} />
       </button>
 
       <h2 className="affirmation-card-title">{script.title}</h2>
@@ -119,7 +120,8 @@ export default function AffirmationCard({
           {coverBusy ? 'Subiendo...' : coverUrl ? 'Cambiar portada' : '+ Subir portada'}
         </button>
         <button type="button" className="affirmation-read-btn" onClick={() => setShowMenu(true)}>
-          📖 Leer guion
+          <BookOpen size={16} strokeWidth={1.75} />
+          Leer guion
         </button>
       </div>
 
@@ -140,7 +142,7 @@ export default function AffirmationCard({
           </div>
           <div className="affirmation-player-controls">
             <button type="button" onClick={onPrev} aria-label="Anterior">
-              ⏮
+              <SkipBack size={18} strokeWidth={1.75} fill="currentColor" />
             </button>
             <button
               type="button"
@@ -149,16 +151,23 @@ export default function AffirmationCard({
               disabled={audioLoading && isCurrent}
               aria-label={isPlaying ? 'Pausar' : 'Reproducir'}
             >
-              {audioLoading && isCurrent ? '…' : isPlaying ? '⏸' : '▶'}
+              {audioLoading && isCurrent ? (
+                <Loader2 size={18} strokeWidth={1.75} className="icon-spin" />
+              ) : isPlaying ? (
+                <Pause size={18} strokeWidth={1.75} fill="currentColor" />
+              ) : (
+                <Play size={18} strokeWidth={1.75} fill="currentColor" />
+              )}
             </button>
             <button type="button" onClick={onNext} aria-label="Siguiente">
-              ⏭
+              <SkipForward size={18} strokeWidth={1.75} fill="currentColor" />
             </button>
           </div>
         </div>
       ) : (
         <button type="button" className="affirmation-record-btn" onClick={() => setShowTeleprompter(true)}>
-          🎙️ Grabar mi voz
+          <Mic size={18} strokeWidth={1.75} />
+          Grabar mi voz
         </button>
       )}
 

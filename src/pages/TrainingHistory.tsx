@@ -1,3 +1,4 @@
+import { ArrowLeft } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -35,7 +36,7 @@ export default function TrainingHistory() {
   return (
     <div className="page">
       <Link to="/entrenamiento" className="area-back">
-        ← Entrenamiento
+        <ArrowLeft size={16} strokeWidth={1.75} /> Entrenamiento
       </Link>
 
       <h1>Historial de entrenamiento</h1>

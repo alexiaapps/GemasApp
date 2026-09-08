@@ -1,3 +1,4 @@
+import { Circle, Mic } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { pickSupportedMimeType } from '../lib/audio'
 
@@ -88,7 +89,8 @@ export default function AudioRecorderButton({ onRecorded, disabled }: Props) {
   if (recording) {
     return (
       <div className="audio-recorder-active">
-        <span>🔴 Grabando... {elapsed}s / {MAX_SECONDS}s</span>
+        <Circle size={12} fill="#f87171" stroke="none" />
+        <span>Grabando... {elapsed}s / {MAX_SECONDS}s</span>
         <button type="button" onClick={stopRecording}>
           Detener
         </button>
@@ -99,7 +101,8 @@ export default function AudioRecorderButton({ onRecorded, disabled }: Props) {
   return (
     <div>
       <button type="button" onClick={startRecording} disabled={disabled}>
-        + Nota de voz
+        <Mic size={16} strokeWidth={1.75} />
+        Nota de voz
       </button>
       {error && <p className="auth-error">{error}</p>}
     </div>

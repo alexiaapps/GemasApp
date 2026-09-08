@@ -1,3 +1,4 @@
+import { MoreHorizontal } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -256,7 +257,7 @@ function ProgramCard({
       </Link>
 
       <button type="button" className="program-card-menu-btn" onClick={onToggleMenu} aria-label="Más opciones">
-        ⋯
+        <MoreHorizontal size={18} strokeWidth={1.75} />
       </button>
 
       {isMenuOpen && (

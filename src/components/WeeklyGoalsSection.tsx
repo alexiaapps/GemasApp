@@ -1,3 +1,4 @@
+import { Check, Trash2 } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { deleteSubgoal, setSubgoalCompleted } from '../lib/areas'
@@ -186,7 +187,7 @@ export default function WeeklyGoalsSection() {
                 onClick={() => handleToggle(item)}
                 aria-label={item.completed ? 'Marcar como pendiente' : 'Marcar como completada'}
               >
-                {item.completed ? '✓' : ''}
+                {item.completed && <Check size={16} strokeWidth={2.5} />}
               </button>
               <span className="weekly-card-text">{item.text}</span>
               {!item.completed && (
@@ -197,7 +198,7 @@ export default function WeeklyGoalsSection() {
                   title="Borrar submeta"
                   aria-label="Borrar submeta"
                 >
-                  🗑
+                  <Trash2 size={15} strokeWidth={1.75} />
                 </button>
               )}
             </div>

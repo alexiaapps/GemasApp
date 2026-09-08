@@ -1,3 +1,4 @@
+import { Circle, Mic, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { pickSupportedMimeType } from '../lib/audio'
 
@@ -102,7 +103,7 @@ export default function TeleprompterRecorder({ scriptText, onCancel, onRecorded 
   return (
     <div className="teleprompter-overlay">
       <button className="lightbox-close" onClick={handleCancel} aria-label="Cerrar">
-        ×
+        <X size={20} strokeWidth={1.75} />
       </button>
 
       <div className="teleprompter-scroll" ref={scrollRef}>
@@ -114,11 +115,15 @@ export default function TeleprompterRecorder({ scriptText, onCancel, onRecorded 
       <div className="teleprompter-controls">
         {!recording ? (
           <button type="button" onClick={startRecording}>
-            🎙️ Empezar a grabar
+            <Mic size={16} strokeWidth={1.75} />
+            Empezar a grabar
           </button>
         ) : (
           <>
-            <span>🔴 Grabando... {elapsed}s</span>
+            <span className="teleprompter-recording-indicator">
+              <Circle size={12} fill="#f87171" stroke="none" />
+              Grabando... {elapsed}s
+            </span>
             <button type="button" onClick={stopRecording}>
               Detener y guardar
             </button>

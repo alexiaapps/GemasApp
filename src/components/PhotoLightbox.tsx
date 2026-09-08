@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { useEffect, useRef, useState, type TouchEvent } from 'react'
 
 export interface LightboxPhoto {
@@ -60,7 +61,7 @@ export default function PhotoLightbox({ photos, startIndex, onClose }: Props) {
       onTouchEnd={handleTouchEnd}
     >
       <button className="lightbox-close" onClick={onClose} aria-label="Cerrar">
-        ×
+        <X size={20} strokeWidth={1.75} />
       </button>
 
       {photos.length > 1 && (
@@ -72,7 +73,7 @@ export default function PhotoLightbox({ photos, startIndex, onClose }: Props) {
           }}
           aria-label="Anterior"
         >
-          ‹
+          <ChevronLeft size={22} strokeWidth={1.75} />
         </button>
       )}
 
@@ -92,7 +93,7 @@ export default function PhotoLightbox({ photos, startIndex, onClose }: Props) {
           }}
           aria-label="Siguiente"
         >
-          ›
+          <ChevronRight size={22} strokeWidth={1.75} />
         </button>
       )}
 

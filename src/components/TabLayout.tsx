@@ -1,12 +1,13 @@
+import { Dumbbell, Home, LayoutGrid, Sparkles, Trophy } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const TABS = [
-  { to: '/', label: 'Inicio', icon: '🏠', end: true },
-  { to: '/entrenamiento', label: 'Entrenamiento', icon: '💪' },
-  { to: '/logros', label: 'Logros', icon: '🏆' },
-  { to: '/areas', label: 'Áreas', icon: '✨' },
-  { to: '/afirmaciones', label: 'Afirmaciones', icon: '💬' },
+  { to: '/', label: 'Inicio', icon: Home, end: true },
+  { to: '/entrenamiento', label: 'Entrenamiento', icon: Dumbbell },
+  { to: '/logros', label: 'Logros', icon: Trophy },
+  { to: '/areas', label: 'Áreas', icon: LayoutGrid },
+  { to: '/afirmaciones', label: 'Afirmaciones', icon: Sparkles },
 ]
 
 export default function TabLayout() {
@@ -36,7 +37,9 @@ export default function TabLayout() {
             end={tab.end}
             className={({ isActive }) => `tab-item${isActive ? ' active' : ''}`}
           >
-            <span className="tab-icon">{tab.icon}</span>
+            <span className="tab-icon">
+              <tab.icon size={22} strokeWidth={1.75} />
+            </span>
             <span className="tab-label">{tab.label}</span>
           </NavLink>
         ))}

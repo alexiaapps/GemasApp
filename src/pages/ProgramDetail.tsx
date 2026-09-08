@@ -1,3 +1,4 @@
+import { ArrowLeft, Check, CheckCircle2, ChevronDown, ChevronRight, Pencil } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -105,15 +106,29 @@ export default function ProgramDetail() {
   const weeks = Array.from(new Set(days.map((d) => d.week))).sort((a, b) => a - b)
   const editingDay = days.find((d) => d.id === editingDayId) ?? null
 
+  const totalDays = program.weeks_total * program.days_per_week
+  const completedDays = days.filter((d) => d.completed).length
+  const overallPct = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0
+
   return (
     <div className="page">
       <Link to="/entrenamiento" className="area-back">
-        ← Entrenamiento
+        <ArrowLeft size={16} strokeWidth={1.75} /> Entrenamiento
       </Link>
 
       <h1>{program.name}</h1>
       {program.goal && <p className="auth-subtitle">{program.goal}</p>}
       {error && <p className="auth-error">{error}</p>}
+
+      <div className="program-overall-progress">
+        <div className="program-overall-progress-label">
+          <span>Progreso</span>
+          <span>{overallPct}%</span>
+        </div>
+        <div className="rest-timer-bar">
+          <div className="rest-timer-fill" style={{ width: `${overallPct}%` }} />
+        </div>
+      </div>
 
       {program.status === 'active' && (
         <button type="button" className="area-new-goal-btn" onClick={handleAddExtraWeek} disabled={addingWeek}>
@@ -121,53 +136,61 @@ export default function ProgramDetail() {
         </button>
       )}
 
+      <h2>Semanas</h2>
+
       {weeks.map((week) => {
         const weekDays = days.filter((d) => d.week === week).sort((a, b) => a.day_number - b.day_number)
         const collapsed = collapsedWeeks.has(week)
+        const weekCompletedCount = weekDays.filter((d) => d.completed).length
+        const weekFullyDone = weekDays.length > 0 && weekCompletedCount === weekDays.length
 
         return (
           <div key={week} className="program-week">
             <button type="button" className="program-week-header" onClick={() => toggleWeek(week)}>
-              <span>Semana {week}</span>
-              <span>{collapsed ? '▼' : '▲'}</span>
+              <span className={`program-week-status${weekFullyDone ? ' done' : ''}`}>
+                {weekFullyDone ? <Check size={16} strokeWidth={2.5} /> : week}
+              </span>
+              <span className="program-week-title">
+                <span className="program-week-name">Semana {week}</span>
+                <span className="program-week-count">
+                  {weekCompletedCount}/{program.days_per_week} Sesiones
+                </span>
+              </span>
+              <span className="program-week-chevron">
+                {collapsed ? (
+                  <ChevronRight size={20} strokeWidth={1.75} />
+                ) : (
+                  <ChevronDown size={20} strokeWidth={1.75} />
+                )}
+              </span>
             </button>
 
             {!collapsed && (
               <ul className="program-day-list">
                 {weekDays.map((day) => (
-                  <li key={day.id} className={`program-day-item${day.completed ? ' completed' : ''}`}>
-                    <div className="program-day-header">
-                      <span>{day.completed ? '✅' : '⬜'} {day.label ?? `Día ${day.day_number}`}</span>
-                    </div>
-
-                    {day.day_exercises.length > 0 ? (
-                      <ul className="day-editor-list">
-                        {[...day.day_exercises]
-                          .sort((a, b) => a.order_index - b.order_index)
-                          .map((ex) => (
-                            <li key={ex.id} className="day-editor-item">
-                              <span className="day-editor-item-text">
-                                {ex.exercise?.name ?? 'Ejercicio'} · {ex.sets}×{ex.target_reps}
-                                {ex.rir != null ? ` · RIR ${ex.rir}` : ''}
-                                {ex.rest_seconds != null ? ` · ${ex.rest_seconds}s descanso` : ''}
-                              </span>
-                            </li>
-                          ))}
-                      </ul>
-                    ) : (
-                      <p className="subgoal-empty">Sin ejercicios</p>
-                    )}
-
+                  <li key={day.id} className="program-day-row">
+                    <Link to={`/entrenamiento/sesion/${day.id}`} className="program-day-row-link">
+                      <span className="program-day-row-name">Día {day.day_number}</span>
+                      {day.completed && (
+                        <span className="program-day-row-status">
+                          <CheckCircle2 size={14} strokeWidth={1.75} /> Completada
+                        </span>
+                      )}
+                    </Link>
                     {!day.completed && (
-                      <div className="program-day-actions">
-                        <button type="button" onClick={() => setEditingDayId(day.id)}>
-                          Editar
-                        </button>
-                        <Link to={`/entrenamiento/sesion/${day.id}`} className="program-day-train-link">
-                          Ir a entrenar
-                        </Link>
-                      </div>
+                      <button
+                        type="button"
+                        className="program-day-row-edit"
+                        onClick={() => setEditingDayId(day.id)}
+                        aria-label="Editar ejercicios del día"
+                        title="Editar ejercicios"
+                      >
+                        <Pencil size={15} strokeWidth={1.75} />
+                      </button>
                     )}
+                    <span className="program-day-row-chevron">
+                      <ChevronRight size={18} strokeWidth={1.75} />
+                    </span>
                   </li>
                 ))}
               </ul>

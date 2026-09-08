@@ -1,3 +1,4 @@
+import { ArrowLeft, CheckCircle2, ChevronDown, ChevronUp, Circle, Trash2 } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -205,7 +206,7 @@ export default function AreaDetail() {
   return (
     <div className="page">
       <Link to="/areas" className="area-back">
-        ← Áreas
+        <ArrowLeft size={16} strokeWidth={1.75} /> Áreas
       </Link>
 
       <h1>
@@ -247,11 +248,20 @@ export default function AreaDetail() {
                 onChange={() => handleCompleteGoal(goal)}
               />
               <span className="goal-text" onClick={() => toggleExpand(goal.id)}>
-                {goal.completed ? '✅' : '⬜'} {goal.text}
+                {goal.completed ? (
+                  <CheckCircle2 size={15} strokeWidth={1.75} />
+                ) : (
+                  <Circle size={15} strokeWidth={1.75} />
+                )}{' '}
+                {goal.text}
                 {goal.category ? ` · ${goal.category}` : ''} · {goal.gems_reward} gemas
               </span>
               <button className="goal-expand-btn" onClick={() => toggleExpand(goal.id)}>
-                {expandedGoals[goal.id] ? '▲' : '▼'}
+                {expandedGoals[goal.id] ? (
+                  <ChevronUp size={16} strokeWidth={1.75} />
+                ) : (
+                  <ChevronDown size={16} strokeWidth={1.75} />
+                )}
               </button>
               <button
                 className="goal-delete-btn"
@@ -259,7 +269,7 @@ export default function AreaDetail() {
                 title="Borrar meta"
                 aria-label="Borrar meta"
               >
-                🗑
+                <Trash2 size={15} strokeWidth={1.75} />
               </button>
             </div>
 
@@ -338,7 +348,7 @@ function SubgoalsSection({
               title="Borrar submeta"
               aria-label="Borrar submeta"
             >
-              🗑
+              <Trash2 size={14} strokeWidth={1.75} />
             </button>
           </li>
         ))}

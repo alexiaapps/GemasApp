@@ -1,3 +1,4 @@
+import { ImagePlus, Video, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import AudioRecorderButton from './AudioRecorderButton'
 import PhotoLightbox from './PhotoLightbox'
@@ -205,6 +206,7 @@ export default function AffirmationGallery({ userId, dimensionKey }: Props) {
         )}
         <input ref={coverInputRef} type="file" accept="image/*" hidden onChange={handleCoverChange} />
         <button type="button" disabled={busy} onClick={() => coverInputRef.current?.click()}>
+          <ImagePlus size={16} strokeWidth={1.75} />
           {coverUrl ? 'Cambiar portada' : 'Subir portada'}
         </button>
       </div>
@@ -212,11 +214,13 @@ export default function AffirmationGallery({ userId, dimensionKey }: Props) {
       <div className="gallery-actions">
         <input ref={photoInputRef} type="file" accept="image/*" hidden onChange={handlePhotoChange} />
         <button type="button" disabled={busy || !area} onClick={() => photoInputRef.current?.click()}>
-          + Foto
+          <ImagePlus size={16} strokeWidth={1.75} />
+          Foto
         </button>
         <AudioRecorderButton onRecorded={handleAudioRecorded} disabled={busy || !area} />
         <button type="button" disabled={busy || !area} onClick={() => setShowVideoForm((v) => !v)}>
-          + Video (link)
+          <Video size={16} strokeWidth={1.75} />
+          Video (link)
         </button>
       </div>
 
@@ -241,7 +245,7 @@ export default function AffirmationGallery({ userId, dimensionKey }: Props) {
           return (
             <div key={item.id} className="gallery-item">
               <button className="gallery-item-delete" onClick={() => handleDelete(item)} disabled={busy}>
-                ✕
+                <X size={14} strokeWidth={2} />
               </button>
 
               {item.media_type === 'photo' && url && (
