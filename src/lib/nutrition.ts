@@ -1,7 +1,6 @@
 import { supabase } from './supabase'
 
 export { toISODate, todayISO } from './date'
-import { toISODate } from './date'
 
 export interface NutritionDaily {
   id?: string
@@ -25,15 +24,13 @@ export async function getNutritionDay(userId: string, logDate: string) {
   return data as NutritionDaily | null
 }
 
-export async function getLastNDays(userId: string, days: number) {
-  const start = new Date()
-  start.setDate(start.getDate() - (days - 1))
-
+export async function getNutritionRange(userId: string, startDate: string, endDate: string) {
   const { data, error } = await supabase
     .from('nutrition_daily')
     .select('*')
     .eq('user_id', userId)
-    .gte('log_date', toISODate(start))
+    .gte('log_date', startDate)
+    .lte('log_date', endDate)
     .order('log_date', { ascending: false })
 
   if (error) throw error
