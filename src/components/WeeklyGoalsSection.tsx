@@ -1,8 +1,10 @@
 import { Check, Trash2 } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { deleteSubgoal, setSubgoalCompleted } from '../lib/areas'
-import { currentWeekStartISO } from '../lib/date'
+import HabitDotsRow from './HabitDotsRow'
+import { deleteSubgoal, setSubgoalCompleted, type GoalKind } from '../lib/areas'
+import { currentWeekStartISO, todayISO, weekEndISO } from '../lib/date'
+import { groupCheckinsBySubgoal, listCheckinsForSubgoals, toggleHabitCheckinToday } from '../lib/habits'
 import {
   MAX_WEEKLY_GOALS,
   assignSubgoalToWeek,
@@ -20,6 +22,8 @@ export default function WeeklyGoalsSection() {
   const weekStart = currentWeekStartISO()
 
   const [weeklyList, setWeeklyList] = useState<WeeklySubgoal[]>([])
+  const [checkinsBySubgoal, setCheckinsBySubgoal] = useState<Map<string, Set<string>>>(new Map())
+  const [togglingHabitId, setTogglingHabitId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -27,6 +31,13 @@ export default function WeeklyGoalsSection() {
   const [pickerLoading, setPickerLoading] = useState(false)
   const [assignable, setAssignable] = useState<AssignableSubgoal[]>([])
   const [goalOptions, setGoalOptions] = useState<GoalOption[]>([])
+  const [newGoalKind, setNewGoalKind] = useState<GoalKind>('once')
+
+  async function loadCheckins(list: WeeklySubgoal[]) {
+    const habitIds = list.filter((s) => s.goal_kind === 'habit').map((s) => s.id)
+    const checkins = await listCheckinsForSubgoals(habitIds, weekStart, weekEndISO(weekStart))
+    return groupCheckinsBySubgoal(checkins)
+  }
 
   useEffect(() => {
     if (!user) return
@@ -37,7 +48,10 @@ export default function WeeklyGoalsSection() {
       setError(null)
       try {
         const list = await listWeeklySubgoals(user!.id, weekStart)
-        if (!cancelled) setWeeklyList(list)
+        if (cancelled) return
+        setWeeklyList(list)
+        const checkinsMap = await loadCheckins(list)
+        if (!cancelled) setCheckinsBySubgoal(checkinsMap)
       } catch (e) {
         if (!cancelled) setError((e as Error).message)
       } finally {
@@ -49,12 +63,44 @@ export default function WeeklyGoalsSection() {
     return () => {
       cancelled = true
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, weekStart])
 
   async function refreshWeeklyList() {
     if (!user) return
     const list = await listWeeklySubgoals(user.id, weekStart)
     setWeeklyList(list)
+    setCheckinsBySubgoal(await loadCheckins(list))
+  }
+
+  async function handleToggleHabitToday(item: WeeklySubgoal) {
+    if (!user) return
+    const today = todayISO()
+    const currentSet = checkinsBySubgoal.get(item.id) ?? new Set<string>()
+    const hasToday = currentSet.has(today)
+
+    setTogglingHabitId(item.id)
+    setCheckinsBySubgoal((prev) => {
+      const next = new Map(prev)
+      const set = new Set(next.get(item.id) ?? [])
+      if (hasToday) set.delete(today)
+      else set.add(today)
+      next.set(item.id, set)
+      return next
+    })
+
+    try {
+      await toggleHabitCheckinToday(item, item.goal.dimension_key, hasToday, currentSet.size)
+    } catch (e) {
+      setError((e as Error).message)
+      setCheckinsBySubgoal((prev) => {
+        const next = new Map(prev)
+        next.set(item.id, currentSet)
+        return next
+      })
+    } finally {
+      setTogglingHabitId(null)
+    }
   }
 
   async function handleToggle(item: WeeklySubgoal) {
@@ -127,15 +173,18 @@ export default function WeeklyGoalsSection() {
     const formData = new FormData(form)
     const goalId = String(formData.get('goal_id') ?? '')
     const text = String(formData.get('text') ?? '').trim()
-    const gemsReward = Number(formData.get('gems_reward') ?? 10)
+    const kind = (String(formData.get('goal_kind') ?? 'once') as GoalKind)
+    const gemsReward = Number(formData.get('gems_reward') ?? (kind === 'habit' ? 2 : 10))
+    const targetDaysPerWeek = kind === 'habit' ? Number(formData.get('target_days_per_week') ?? 5) : null
 
     if (!goalId || !text) return
 
     setError(null)
     try {
-      await createSubgoalForWeek(user.id, goalId, text, gemsReward, weekStart)
+      await createSubgoalForWeek(user.id, goalId, text, gemsReward, weekStart, kind, targetDaysPerWeek)
       await refreshWeeklyList()
       form.reset()
+      setNewGoalKind('once')
       setShowPicker(false)
     } catch (err) {
       setError((err as Error).message)
@@ -175,6 +224,42 @@ export default function WeeklyGoalsSection() {
       <div className="weekly-card-stack">
         {weeklyList.map((item) => {
           const color = item.goal.dimension?.color_hex ?? '#6ee7b7'
+
+          if (item.goal_kind === 'habit') {
+            const checkins = checkinsBySubgoal.get(item.id) ?? new Set<string>()
+            const target = item.target_days_per_week ?? 7
+            const metThisWeek = checkins.size >= target
+            return (
+              <div
+                key={item.id}
+                className={`weekly-card habit${metThisWeek ? ' completed' : ''}`}
+                style={{ ['--dim-color' as string]: color }}
+              >
+                <div className="weekly-habit-header">
+                  <span className="weekly-card-text">{item.text}</span>
+                  <span className="weekly-habit-count">
+                    {checkins.size}/{target}
+                  </span>
+                  <button
+                    type="button"
+                    className="weekly-delete-btn"
+                    onClick={() => handleDeleteWeekly(item)}
+                    title="Borrar submeta"
+                    aria-label="Borrar submeta"
+                  >
+                    <Trash2 size={15} strokeWidth={1.75} />
+                  </button>
+                </div>
+                <HabitDotsRow
+                  checkinDates={checkins}
+                  dimensionColor={color}
+                  onToggleToday={() => handleToggleHabitToday(item)}
+                  toggling={togglingHabitId === item.id}
+                />
+              </div>
+            )
+          }
+
           return (
             <div
               key={item.id}
@@ -264,8 +349,25 @@ export default function WeeklyGoalsSection() {
                   <input name="text" type="text" required />
                 </label>
                 <label>
-                  Gemas de recompensa
-                  <input name="gems_reward" type="number" defaultValue={10} min={0} />
+                  Tipo de meta
+                  <select
+                    name="goal_kind"
+                    value={newGoalKind}
+                    onChange={(e) => setNewGoalKind(e.target.value as GoalKind)}
+                  >
+                    <option value="once">✓ Una sola acción</option>
+                    <option value="habit">🔁 Hábito recurrente</option>
+                  </select>
+                </label>
+                {newGoalKind === 'habit' && (
+                  <label>
+                    ¿Cuántos días a la semana?
+                    <input name="target_days_per_week" type="number" defaultValue={5} min={1} max={7} required />
+                  </label>
+                )}
+                <label>
+                  Gemas de recompensa {newGoalKind === 'habit' ? '(por cada día marcado)' : ''}
+                  <input key={newGoalKind} name="gems_reward" type="number" defaultValue={newGoalKind === 'habit' ? 2 : 10} min={0} />
                 </label>
                 <button type="submit" disabled={!slotsAvailable}>
                   Agregar y asignar esta semana

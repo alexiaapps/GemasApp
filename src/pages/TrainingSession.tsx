@@ -65,6 +65,7 @@ export default function TrainingSession() {
   const [activeTimer, setActiveTimer] = useState<{ key: string; seconds: number } | null>(null)
   const [dayCompleted, setDayCompleted] = useState(false)
   const [weekBonusMessage, setWeekBonusMessage] = useState<string | null>(null)
+  const [finishing, setFinishing] = useState(false)
 
   useEffect(() => {
     if (!dayId) return
@@ -107,11 +108,6 @@ export default function TrainingSession() {
       setLoading(false)
     }
   }
-
-  const totalSets = useMemo(
-    () => (day ? day.day_exercises.reduce((sum, ex) => sum + ex.sets, 0) : 0),
-    [day],
-  )
 
   const totalExercises = day?.day_exercises.length ?? 0
   const completedExercises = useMemo(() => {
@@ -172,22 +168,37 @@ export default function TrainingSession() {
       if (exercise.rest_seconds != null && exercise.rest_seconds > 0) {
         setActiveTimer({ key: `${key}-${Date.now()}`, seconds: exercise.rest_seconds })
       }
-
-      if (nextLoggedSets.size === totalSets && !dayCompleted) {
-        await markDayCompleted(day.id)
-        await awardGemOnce(user.id, 5, 'fisico', 'session', day.id)
-        setDayCompleted(true)
-
-        const weekDone = await isWeekFullyCompleted(day.program_id, day.week)
-        if (weekDone) {
-          await awardGemOnce(user.id, 10, 'fisico', 'week_bonus', `${day.program_id}_w${day.week}`)
-          setWeekBonusMessage('¡Completaste toda la semana! +10 gemas extra 💎')
-        }
-      }
     } catch (e) {
       setError((e as Error).message)
     } finally {
       setSavingKey(null)
+    }
+  }
+
+  async function handleFinishSession() {
+    if (!user || !day || dayCompleted || finishing) return
+
+    if (loggedSets.size === 0) {
+      const confirmed = window.confirm('¿Seguro? No registraste ningún ejercicio.')
+      if (!confirmed) return
+    }
+
+    setFinishing(true)
+    setError(null)
+    try {
+      await markDayCompleted(day.id)
+      await awardGemOnce(user.id, 5, 'fisico', 'session', day.id)
+      setDayCompleted(true)
+
+      const weekDone = await isWeekFullyCompleted(day.program_id, day.week)
+      if (weekDone) {
+        await awardGemOnce(user.id, 10, 'fisico', 'week_bonus', `${day.program_id}_w${day.week}`)
+        setWeekBonusMessage('¡Completaste toda la semana! +10 gemas extra 💎')
+      }
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setFinishing(false)
     }
   }
 
@@ -416,6 +427,22 @@ export default function TrainingSession() {
             </div>
           )
         })}
+
+      <div className="training-finish-bar">
+        <button
+          type="button"
+          className={`training-finish-btn${dayCompleted ? ' done' : ''}`}
+          onClick={handleFinishSession}
+          disabled={dayCompleted || finishing}
+        >
+          {finishing ? (
+            <Loader2 size={18} strokeWidth={1.75} className="icon-spin" />
+          ) : (
+            <CheckCircle2 size={18} strokeWidth={1.75} />
+          )}
+          {dayCompleted ? 'Sesión completada' : 'Finalizar sesión'}
+        </button>
+      </div>
     </div>
   )
 }

@@ -222,6 +222,98 @@ h4 {
   color: var(--text);
 }
 
+.weekly-card.habit {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.weekly-habit-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.weekly-habit-count {
+  flex: 0 0 auto;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.habit-dots-row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.habit-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-family: var(--font-body);
+}
+
+.habit-dot.checked {
+  color: #ffffff;
+}
+
+.habit-dot-today {
+  cursor: pointer;
+  border-color: var(--text);
+  border-width: 2px;
+}
+
+.habit-dot-today:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.habit-subgoal-list {
+  margin-top: 0.6rem;
+}
+
+.subgoal-list .habit-subgoal-item {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.4rem;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.7rem;
+  margin-bottom: 0.5rem;
+}
+
+.habit-subgoal-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.habit-subgoal-header .subgoal-item-text {
+  flex: 1;
+}
+
+.habit-subgoal-item.met .subgoal-item-text {
+  text-decoration: line-through;
+  color: var(--text-dim);
+}
+
+.habit-subgoal-count {
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
 .weekly-picker {
   background: var(--surface);
   border-radius: 12px;
@@ -968,6 +1060,76 @@ h4 {
   margin-top: 0.7rem;
   padding-top: 0.7rem;
   border-top: 1px solid var(--border);
+}
+
+.goal-affirmations-section {
+  margin-top: 0.7rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--border);
+}
+
+.goal-affirmations-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  margin: 0 0 0.5rem;
+}
+
+.goal-affirmations-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.goal-affirmation-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.7rem;
+}
+
+.goal-affirmation-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.goal-affirmation-player {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.goal-affirmation-play-btn {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.goal-affirmation-scrubber {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--accent-strong);
+}
+
+.goal-affirmation-time {
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
 }
 
 .subgoal-list {
@@ -1823,6 +1985,48 @@ h4 {
 /* --- Entrenamiento: sesión de entrenamiento (Fase B) --- */
 .training-page {
   padding-top: 0;
+  padding-bottom: 4.5rem;
+}
+
+.training-finish-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 5rem;
+  z-index: 40;
+  display: flex;
+  justify-content: center;
+  padding: 0.7rem 1.2rem;
+  background: var(--surface);
+  border-top: 1.5px solid var(--border);
+}
+
+.training-finish-btn {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--gradient-rainbow);
+  color: var(--text);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  font-weight: 700;
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+.training-finish-btn.done {
+  background: var(--surface-2);
+  color: var(--text-dim);
+  cursor: default;
+}
+
+.training-finish-btn:disabled {
+  opacity: 0.7;
+  cursor: default;
 }
 
 .training-header {

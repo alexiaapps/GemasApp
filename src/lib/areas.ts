@@ -21,6 +21,8 @@ export interface Goal {
   created_at: string
 }
 
+export type GoalKind = 'once' | 'habit'
+
 export interface Subgoal {
   id: string
   user_id: string
@@ -31,6 +33,8 @@ export interface Subgoal {
   completed_at: string | null
   created_at: string
   week_start_date: string | null
+  goal_kind: GoalKind
+  target_days_per_week: number | null
 }
 
 export async function listDimensions() {
@@ -116,6 +120,8 @@ export async function createSubgoal(
   goalId: string,
   text: string,
   gemsReward: number,
+  goalKind: GoalKind = 'once',
+  targetDaysPerWeek: number | null = null,
 ) {
   const { data, error } = await supabase
     .from('subgoals')
@@ -124,6 +130,8 @@ export async function createSubgoal(
       goal_id: goalId,
       text,
       gems_reward: gemsReward,
+      goal_kind: goalKind,
+      target_days_per_week: goalKind === 'habit' ? targetDaysPerWeek : null,
     })
     .select()
     .single()

@@ -46,6 +46,18 @@ export async function listAllScriptsForUser(userId: string) {
   return (data ?? []) as unknown as AffirmationScriptWithGoal[]
 }
 
+export async function listScriptsForGoal(userId: string, goalId: string) {
+  const { data, error } = await supabase
+    .from('affirmation_scripts')
+    .select(SCRIPT_WITH_GOAL_SELECT)
+    .eq('user_id', userId)
+    .eq('goal_id', goalId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return (data ?? []) as unknown as AffirmationScriptWithGoal[]
+}
+
 export async function saveScript(userId: string, goalId: string, title: string, scriptText: string) {
   const { data, error } = await supabase
     .from('affirmation_scripts')

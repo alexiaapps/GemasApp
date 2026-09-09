@@ -1,3 +1,4 @@
+import type { GoalKind } from './areas'
 import { supabase } from './supabase'
 
 export const MAX_WEEKLY_GOALS = 5
@@ -12,6 +13,8 @@ export interface WeeklySubgoal {
   completed_at: string | null
   created_at: string
   week_start_date: string | null
+  goal_kind: GoalKind
+  target_days_per_week: number | null
   goal: {
     id: string
     text: string
@@ -52,6 +55,7 @@ export interface GoalOption {
 
 const WEEKLY_SUBGOAL_SELECT = `
   id, user_id, goal_id, text, gems_reward, completed, completed_at, created_at, week_start_date,
+  goal_kind, target_days_per_week,
   goal:goals ( id, text, dimension_key, dimension:dimensions ( label, color_hex ) )
 `
 
@@ -108,6 +112,8 @@ export async function createSubgoalForWeek(
   text: string,
   gemsReward: number,
   weekStart: string,
+  goalKind: GoalKind = 'once',
+  targetDaysPerWeek: number | null = null,
 ) {
   const { error } = await supabase.from('subgoals').insert({
     user_id: userId,
@@ -115,6 +121,8 @@ export async function createSubgoalForWeek(
     text,
     gems_reward: gemsReward,
     week_start_date: weekStart,
+    goal_kind: goalKind,
+    target_days_per_week: goalKind === 'habit' ? targetDaysPerWeek : null,
   })
 
   if (error) throw error
