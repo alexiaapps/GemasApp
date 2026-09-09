@@ -56,7 +56,7 @@ async function removeCheckin(subgoalId: string, logDate: string) {
 
 /**
  * Alterna el check-in de HOY para una submeta tipo 'habit'.
- * Al crear uno nuevo: otorga las gemas del día (source='subgoal_checkin', deduplicado por día).
+ * Marcar un día NO otorga gemas por sí solo, solo registra el progreso visual.
  * Si con este check-in se alcanza target_days_per_week: marca la submeta completada y otorga
  * el bono (source='subgoal', una sola vez en la vida de la submeta gracias a awardGemOnce).
  * Al quitar el check-in de hoy: solo borra la fila, sin revertir gemas ya otorgadas.
@@ -75,7 +75,6 @@ export async function toggleHabitCheckinToday(
   }
 
   await addCheckin(subgoal.user_id, subgoal.id, today)
-  await awardGemOnce(subgoal.user_id, subgoal.gems_reward, parentDimensionKey, 'subgoal_checkin', `${subgoal.id}_${today}`)
 
   const newCount = weekCheckinsCountBeforeToggle + 1
   if (subgoal.target_days_per_week != null && newCount >= subgoal.target_days_per_week) {

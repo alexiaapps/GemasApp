@@ -264,6 +264,8 @@ export default function WeeklyGoalsSection() {
         {weeklyList.map((item) => {
           const color = item.goal.dimension?.color_hex ?? '#6ee7b7'
 
+          const dimensionLabel = (item.goal.dimension?.label ?? item.goal.dimension_key).toUpperCase()
+
           if (item.goal_kind === 'habit') {
             const checkins = checkinsBySubgoal.get(item.id) ?? new Set<string>()
             const target = item.target_days_per_week ?? 7
@@ -275,10 +277,10 @@ export default function WeeklyGoalsSection() {
                 style={{ ['--dim-color' as string]: color }}
               >
                 <div className="weekly-habit-header">
-                  <span className="weekly-card-text">{item.text}</span>
-                  <span className="weekly-habit-count">
-                    {checkins.size}/{target}
-                  </span>
+                  <div className="weekly-card-text-col">
+                    <span className="weekly-card-text">{item.text}</span>
+                    <span className="weekly-card-dimension">{dimensionLabel}</span>
+                  </div>
                   <button
                     type="button"
                     className="weekly-delete-btn"
@@ -288,6 +290,9 @@ export default function WeeklyGoalsSection() {
                   >
                     <Trash2 size={15} strokeWidth={1.75} />
                   </button>
+                  <span className="weekly-habit-count">
+                    {checkins.size}/{target}
+                  </span>
                 </div>
                 <HabitDotsRow
                   checkinDates={checkins}
@@ -305,15 +310,10 @@ export default function WeeklyGoalsSection() {
               className={`weekly-card${item.completed ? ' completed' : ''}`}
               style={{ ['--dim-color' as string]: color }}
             >
-              <button
-                type="button"
-                className="weekly-check-circle"
-                onClick={() => handleToggle(item)}
-                aria-label={item.completed ? 'Marcar como pendiente' : 'Marcar como completada'}
-              >
-                {item.completed && <Check size={16} strokeWidth={2.5} />}
-              </button>
-              <span className="weekly-card-text">{item.text}</span>
+              <div className="weekly-card-text-col">
+                <span className="weekly-card-text">{item.text}</span>
+                <span className="weekly-card-dimension">{dimensionLabel}</span>
+              </div>
               {!item.completed && (
                 <button
                   type="button"
@@ -325,6 +325,14 @@ export default function WeeklyGoalsSection() {
                   <Trash2 size={15} strokeWidth={1.75} />
                 </button>
               )}
+              <button
+                type="button"
+                className="weekly-check-circle"
+                onClick={() => handleToggle(item)}
+                aria-label={item.completed ? 'Marcar como pendiente' : 'Marcar como completada'}
+              >
+                {item.completed && <Check size={16} strokeWidth={2.5} />}
+              </button>
             </div>
           )
         })}
