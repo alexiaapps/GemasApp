@@ -202,9 +202,28 @@ h4 {
   flex: 0 0 auto;
 }
 
-.weekly-gem-locked {
+.weekly-gem-icon-svg {
   color: var(--text-dim);
-  opacity: 0.5;
+  fill: none;
+  opacity: 0.4;
+  transition: color 0.3s ease, fill 0.3s ease, opacity 0.3s ease;
+}
+
+.weekly-gem-icon-svg.achieved {
+  opacity: 1;
+  animation: gem-pop 0.4s ease;
+}
+
+@keyframes gem-pop {
+  0% {
+    transform: scale(0.55);
+  }
+  60% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .weekly-gem-check {
@@ -214,6 +233,14 @@ h4 {
   background: var(--surface);
   border-radius: 50%;
   color: #1f9d55;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity 0.25s ease 0.15s, transform 0.25s ease 0.15s;
+}
+
+.weekly-gem-check.visible {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .weekly-card-stack {
@@ -229,14 +256,9 @@ h4 {
   gap: 0.7rem;
   background: var(--surface);
   border: 1.5px solid var(--border);
-  border-left: 5px solid var(--border);
+  border-left: 6px solid var(--dim-color, var(--accent));
   border-radius: 10px;
   padding: 0.7rem 0.9rem;
-}
-
-/* Acento puntual: borde izquierdo grueso con el color sólido de la dimensión — nunca fondo diluido */
-.weekly-card.completed {
-  border-left-color: var(--dim-color, var(--accent));
 }
 
 .weekly-check-circle {
@@ -244,7 +266,7 @@ h4 {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  border: 2px solid rgba(0, 0, 0, 0.25);
+  border: 2px solid var(--dim-color, var(--accent));
   background: transparent;
   font-weight: 700;
   cursor: pointer;
@@ -660,6 +682,61 @@ h4 {
   margin-bottom: 0.8rem;
 }
 
+.area-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem 1.2rem 1.2rem;
+  margin: -1.2rem -1.2rem 1rem;
+}
+
+.area-detail-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  text-decoration: none;
+  font-size: 0.85rem;
+  opacity: 0.9;
+  flex: 0 0 auto;
+}
+
+.area-detail-title {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.goal-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 1rem 1.2rem;
+  margin: -1.2rem -1.2rem 1.2rem;
+}
+
+.goal-detail-back {
+  display: flex;
+  flex: 0 0 auto;
+  text-decoration: none;
+}
+
+.goal-detail-emoji {
+  font-size: 1.5rem;
+  flex: 0 0 auto;
+}
+
+.goal-detail-title {
+  margin: 0;
+  font-size: 1.15rem;
+  flex: 1;
+}
+
+.goal-detail-add-btn {
+  background: var(--surface) !important;
+  border-width: 1.5px !important;
+  border-style: solid !important;
+  font-weight: 600;
+}
+
 .area-new-goal-btn {
   background: var(--surface-2);
   border: 1px solid var(--border);
@@ -745,44 +822,52 @@ h4 {
 }
 
 .goal-item {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: 10px;
-  padding: 0.7rem 0.9rem;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .goal-row {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 12px;
+  transition: opacity 0.15s ease;
+}
+
+.goal-item.completed .goal-row {
+  opacity: 0.7;
 }
 
 .goal-emoji {
   flex: 0 0 auto;
-  font-size: 1.3rem;
-  cursor: pointer;
+  font-size: 1.4rem;
 }
 
 .goal-title {
   flex: 1;
   font-weight: 700;
-  cursor: pointer;
 }
 
 .goal-item.completed .goal-title {
-  color: var(--text-dim);
+  text-decoration: line-through;
 }
 
-.goal-expand-btn {
+.goal-delete-btn {
   background: none;
   border: none;
-  color: var(--text-dim);
+  opacity: 0.85;
   cursor: pointer;
   display: flex;
   align-items: center;
+  padding: 0.2rem 0.3rem;
+  flex: 0 0 auto;
 }
 
-.goal-delete-btn,
+.goal-delete-btn:hover {
+  opacity: 1;
+}
+
 .subgoal-delete-btn,
 .weekly-delete-btn {
   background: none;

@@ -1,27 +1,19 @@
-import { ArrowLeft, ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
-import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { ArrowLeft, Trash2 } from 'lucide-react'
+import { useEffect, useState, type FormEvent, type MouseEvent } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import AffirmationPlaylist from '../components/AffirmationPlaylist'
 import AreaResourcesSection from '../components/AreaResourcesSection'
-import HabitDotsRow from '../components/HabitDotsRow'
 import {
   completeGoal,
-  completeSubgoal,
   createGoal,
-  createSubgoal,
   deleteGoal,
-  deleteSubgoal,
   getDimension,
   listGoalsByDimension,
-  listSubgoalsByGoal,
   type Dimension,
   type Goal,
-  type GoalKind,
-  type Subgoal,
 } from '../lib/areas'
-import { currentWeekStartISO, todayISO, weekEndISO } from '../lib/date'
-import { groupCheckinsBySubgoal, listCheckinsForSubgoals, toggleHabitCheckinToday } from '../lib/habits'
+import { getContrastTextColor } from '../lib/color'
 
 const COMMON_GOAL_EMOJIS = [
   '🎯', '🚀', '💪', '📚', '💰', '❤️', '🧘', '🏃', '🎨', '🎵', '🌱', '🏆', '✈️', '🍎', '💡', '🔥', '⭐', '🎓',
@@ -30,6 +22,7 @@ const COMMON_GOAL_EMOJIS = [
 export default function AreaDetail() {
   const { key } = useParams<{ key: string }>()
   const { user } = useAuth()
+  const navigate = useNavigate()
 
   const [dimension, setDimension] = useState<Dimension | null>(null)
   const [goals, setGoals] = useState<Goal[]>([])
@@ -38,11 +31,6 @@ export default function AreaDetail() {
 
   const [showNewGoalForm, setShowNewGoalForm] = useState(false)
   const [newGoalEmoji, setNewGoalEmoji] = useState('')
-
-  const [expandedGoals, setExpandedGoals] = useState<Record<string, boolean>>({})
-  const [subgoalsByGoal, setSubgoalsByGoal] = useState<Record<string, Subgoal[]>>({})
-  const [checkinsBySubgoal, setCheckinsBySubgoal] = useState<Map<string, Set<string>>>(new Map())
-  const [togglingHabitId, setTogglingHabitId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!user || !key) return
@@ -95,7 +83,9 @@ export default function AreaDetail() {
     }
   }
 
-  async function handleCompleteGoal(goal: Goal) {
+  async function handleCompleteGoal(e: MouseEvent, goal: Goal) {
+    e.preventDefault()
+    e.stopPropagation()
     try {
       setGoals((prev) =>
         prev.map((g) =>
@@ -111,103 +101,9 @@ export default function AreaDetail() {
     }
   }
 
-  async function toggleExpand(goalId: string) {
-    const isExpanded = !!expandedGoals[goalId]
-    setExpandedGoals((prev) => ({ ...prev, [goalId]: !isExpanded }))
-
-    if (!isExpanded && !subgoalsByGoal[goalId]) {
-      try {
-        const subgoals = await listSubgoalsByGoal(goalId)
-        setSubgoalsByGoal((prev) => ({ ...prev, [goalId]: subgoals }))
-
-        const habitIds = subgoals.filter((s) => s.goal_kind === 'habit').map((s) => s.id)
-        if (habitIds.length > 0) {
-          const weekStart = currentWeekStartISO()
-          const checkins = await listCheckinsForSubgoals(habitIds, weekStart, weekEndISO(weekStart))
-          const grouped = groupCheckinsBySubgoal(checkins)
-          setCheckinsBySubgoal((prev) => new Map([...prev, ...grouped]))
-        }
-      } catch (err) {
-        setError((err as Error).message)
-      }
-    }
-  }
-
-  async function handleCreateSubgoal(goalId: string, kind: GoalKind, e: FormEvent<HTMLFormElement>) {
+  async function handleDeleteGoal(e: MouseEvent, goal: Goal) {
     e.preventDefault()
-    if (!user) return
-
-    const form = e.currentTarget
-    const formData = new FormData(form)
-    const text = String(formData.get('text') ?? '').trim()
-    const gemsReward = Number(formData.get('gems_reward') ?? (kind === 'habit' ? 2 : 10))
-    const targetDaysPerWeek = kind === 'habit' ? Number(formData.get('target_days_per_week') ?? 5) : null
-
-    if (!text) return
-
-    try {
-      const subgoal = await createSubgoal(user.id, goalId, text, gemsReward, kind, targetDaysPerWeek)
-      setSubgoalsByGoal((prev) => ({
-        ...prev,
-        [goalId]: [...(prev[goalId] ?? []), subgoal],
-      }))
-      form.reset()
-    } catch (err) {
-      setError((err as Error).message)
-    }
-  }
-
-  async function handleToggleHabitToday(subgoal: Subgoal, dimensionKey: string) {
-    if (!user) return
-    const today = todayISO()
-    const currentSet = checkinsBySubgoal.get(subgoal.id) ?? new Set<string>()
-    const hasToday = currentSet.has(today)
-
-    setTogglingHabitId(subgoal.id)
-    setCheckinsBySubgoal((prev) => {
-      const next = new Map(prev)
-      const set = new Set(next.get(subgoal.id) ?? [])
-      if (hasToday) set.delete(today)
-      else set.add(today)
-      next.set(subgoal.id, set)
-      return next
-    })
-
-    try {
-      await toggleHabitCheckinToday(subgoal, dimensionKey, hasToday, currentSet.size)
-    } catch (err) {
-      setError((err as Error).message)
-      setCheckinsBySubgoal((prev) => {
-        const next = new Map(prev)
-        next.set(subgoal.id, currentSet)
-        return next
-      })
-    } finally {
-      setTogglingHabitId(null)
-    }
-  }
-
-  async function handleCompleteSubgoal(goalId: string, subgoal: Subgoal, dimensionKey: string) {
-    try {
-      setSubgoalsByGoal((prev) => ({
-        ...prev,
-        [goalId]: (prev[goalId] ?? []).map((s) =>
-          s.id === subgoal.id ? { ...s, completed: true, completed_at: new Date().toISOString() } : s,
-        ),
-      }))
-      await completeSubgoal(subgoal, dimensionKey)
-    } catch (err) {
-      setError((err as Error).message)
-      setSubgoalsByGoal((prev) => ({
-        ...prev,
-        [goalId]: (prev[goalId] ?? []).map((s) =>
-          s.id === subgoal.id ? { ...s, completed: false, completed_at: null } : s,
-        ),
-      }))
-    }
-  }
-
-  async function handleDeleteGoal(goal: Goal) {
+    e.stopPropagation()
     const base = '¿Seguro que quieres borrar esta meta y todas sus submetas?'
     const message = goal.completed
       ? `Esta meta ya fue completada y ya otorgó ${goal.gems_reward} gemas — esas gemas NO se te van a quitar al borrarla.\n\n${base}`
@@ -218,30 +114,6 @@ export default function AreaDetail() {
     try {
       await deleteGoal(goal.id)
       setGoals((prev) => prev.filter((g) => g.id !== goal.id))
-      setSubgoalsByGoal((prev) => {
-        const next = { ...prev }
-        delete next[goal.id]
-        return next
-      })
-      setExpandedGoals((prev) => {
-        const next = { ...prev }
-        delete next[goal.id]
-        return next
-      })
-    } catch (err) {
-      setError((err as Error).message)
-    }
-  }
-
-  async function handleDeleteSubgoal(goalId: string, subgoal: Subgoal) {
-    if (!window.confirm('¿Seguro que quieres borrar esta submeta?')) return
-
-    try {
-      await deleteSubgoal(subgoal.id)
-      setSubgoalsByGoal((prev) => ({
-        ...prev,
-        [goalId]: (prev[goalId] ?? []).filter((s) => s.id !== subgoal.id),
-      }))
     } catch (err) {
       setError((err as Error).message)
     }
@@ -255,15 +127,20 @@ export default function AreaDetail() {
     )
   }
 
-  return (
-    <div className="page">
-      <Link to="/areas" className="area-back">
-        <ArrowLeft size={16} strokeWidth={1.75} /> Áreas
-      </Link>
+  const dimColor = dimension?.color_hex ?? '#6ee7b7'
+  const textColor = getContrastTextColor(dimColor)
 
-      <h1>
-        {dimension?.emoji} {dimension?.label ?? key}
-      </h1>
+  return (
+    <div className="page area-detail-page">
+      <div className="area-detail-header" style={{ background: dimColor, color: textColor }}>
+        <Link to="/areas" className="area-detail-back" style={{ color: textColor }}>
+          <ArrowLeft size={18} strokeWidth={1.75} />
+          Áreas
+        </Link>
+        <h1 className="area-detail-title">
+          {dimension?.emoji} {dimension?.label ?? key}
+        </h1>
+      </div>
 
       {error && <p className="auth-error">{error}</p>}
 
@@ -314,55 +191,43 @@ export default function AreaDetail() {
       )}
 
       <ul className="goal-list">
-        {goals.map((goal) => (
-          <li key={goal.id} className={`goal-item${goal.completed ? ' completed' : ''}`}>
-            <div className="goal-row">
-              <input
-                type="checkbox"
-                checked={goal.completed}
-                disabled={goal.completed}
-                onChange={() => handleCompleteGoal(goal)}
-              />
-              <span className="goal-emoji" onClick={() => toggleExpand(goal.id)}>
-                {goal.icon_emoji || dimension?.emoji}
-              </span>
-              <span className="goal-title" onClick={() => toggleExpand(goal.id)}>
-                {goal.text}
-              </span>
-              <button className="goal-expand-btn" onClick={() => toggleExpand(goal.id)}>
-                {expandedGoals[goal.id] ? (
-                  <ChevronUp size={16} strokeWidth={1.75} />
-                ) : (
-                  <ChevronDown size={16} strokeWidth={1.75} />
-                )}
-              </button>
-              <button
-                className="goal-delete-btn"
-                onClick={() => handleDeleteGoal(goal)}
-                title="Borrar meta"
-                aria-label="Borrar meta"
+        {goals.map((goal) => {
+          const cardText = textColor
+          return (
+            <li key={goal.id} className={`goal-item goal-item-colored${goal.completed ? ' completed' : ''}`}>
+              <div
+                className="goal-row"
+                style={{ background: dimColor, color: cardText, cursor: 'pointer' }}
+                onClick={() => navigate(`/areas/${key}/${goal.id}`)}
+                role="link"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') navigate(`/areas/${key}/${goal.id}`)
+                }}
               >
-                <Trash2 size={15} strokeWidth={1.75} />
-              </button>
-            </div>
-
-            {expandedGoals[goal.id] && (
-              <SubgoalsSection
-                goal={goal}
-                subgoals={subgoalsByGoal[goal.id] ?? []}
-                dimensionColor={dimension?.color_hex ?? '#6ee7b7'}
-                checkinsBySubgoal={checkinsBySubgoal}
-                togglingHabitId={togglingHabitId}
-                onCreateSubgoal={(kind, e) => handleCreateSubgoal(goal.id, kind, e)}
-                onCompleteSubgoal={(subgoal) =>
-                  handleCompleteSubgoal(goal.id, subgoal, goal.dimension_key)
-                }
-                onDeleteSubgoal={(subgoal) => handleDeleteSubgoal(goal.id, subgoal)}
-                onToggleHabitToday={(subgoal) => handleToggleHabitToday(subgoal, goal.dimension_key)}
-              />
-            )}
-          </li>
-        ))}
+                <input
+                  type="checkbox"
+                  checked={goal.completed}
+                  disabled={goal.completed}
+                  onClick={(e) => handleCompleteGoal(e, goal)}
+                  onChange={() => {}}
+                  style={{ accentColor: cardText }}
+                />
+                <span className="goal-emoji">{goal.icon_emoji || dimension?.emoji}</span>
+                <span className="goal-title">{goal.text}</span>
+                <button
+                  className="goal-delete-btn"
+                  onClick={(e) => handleDeleteGoal(e, goal)}
+                  title="Borrar meta"
+                  aria-label="Borrar meta"
+                  style={{ color: cardText }}
+                >
+                  <Trash2 size={15} strokeWidth={1.75} />
+                </button>
+              </div>
+            </li>
+          )
+        })}
         {goals.length === 0 && <li className="subgoal-empty">Sin metas todavía</li>}
       </ul>
 
@@ -376,141 +241,6 @@ export default function AreaDetail() {
       )}
 
       {user && key && <AreaResourcesSection userId={user.id} dimensionKey={key} />}
-    </div>
-  )
-}
-
-function SubgoalsSection({
-  subgoals,
-  dimensionColor,
-  checkinsBySubgoal,
-  togglingHabitId,
-  onCreateSubgoal,
-  onCompleteSubgoal,
-  onDeleteSubgoal,
-  onToggleHabitToday,
-}: {
-  goal: Goal
-  subgoals: Subgoal[]
-  dimensionColor: string
-  checkinsBySubgoal: Map<string, Set<string>>
-  togglingHabitId: string | null
-  onCreateSubgoal: (kind: GoalKind, e: FormEvent<HTMLFormElement>) => void
-  onCompleteSubgoal: (subgoal: Subgoal) => void
-  onDeleteSubgoal: (subgoal: Subgoal) => void
-  onToggleHabitToday: (subgoal: Subgoal) => void
-}) {
-  const [showForm, setShowForm] = useState(false)
-  const [kind, setKind] = useState<GoalKind>('once')
-  const pending = subgoals.filter((s) => s.goal_kind === 'once' && !s.completed)
-  const completed = subgoals.filter((s) => s.goal_kind === 'once' && s.completed)
-  const habits = subgoals.filter((s) => s.goal_kind === 'habit')
-
-  return (
-    <div className="subgoals-section">
-      <button className="area-new-goal-btn" onClick={() => setShowForm((v) => !v)}>
-        + Agregar submeta
-      </button>
-
-      {showForm && (
-        <form
-          className="area-form"
-          onSubmit={(e) => {
-            onCreateSubgoal(kind, e)
-            setShowForm(false)
-            setKind('once')
-          }}
-        >
-          <label>
-            Texto
-            <input name="text" type="text" required />
-          </label>
-          <label>
-            Tipo de meta
-            <select value={kind} onChange={(e) => setKind(e.target.value as GoalKind)}>
-              <option value="once">✓ Una sola acción</option>
-              <option value="habit">🔁 Hábito recurrente</option>
-            </select>
-          </label>
-          {kind === 'habit' && (
-            <label>
-              ¿Cuántos días a la semana?
-              <input name="target_days_per_week" type="number" defaultValue={5} min={1} max={7} required />
-            </label>
-          )}
-          <label>
-            Gemas de recompensa {kind === 'habit' ? '(por cada día marcado)' : ''}
-            <input
-              key={kind}
-              name="gems_reward"
-              type="number"
-              defaultValue={kind === 'habit' ? 2 : 10}
-              min={0}
-            />
-          </label>
-          <button type="submit">Guardar submeta</button>
-        </form>
-      )}
-
-      <ul className="subgoal-list">
-        {pending.map((s) => (
-          <li key={s.id}>
-            <input type="checkbox" checked={false} onChange={() => onCompleteSubgoal(s)} />
-            <span className="subgoal-item-text">
-              {s.text} · {s.gems_reward} gemas
-            </span>
-            <button
-              className="subgoal-delete-btn"
-              onClick={() => onDeleteSubgoal(s)}
-              title="Borrar submeta"
-              aria-label="Borrar submeta"
-            >
-              <Trash2 size={14} strokeWidth={1.75} />
-            </button>
-          </li>
-        ))}
-        {completed.map((s) => (
-          <li key={s.id} className="subgoal-completed">
-            <input type="checkbox" checked disabled />
-            <span style={{ textDecoration: 'line-through' }}>{s.text}</span> · {s.gems_reward} gemas
-          </li>
-        ))}
-        {subgoals.length === 0 && <li className="subgoal-empty">Sin submetas todavía</li>}
-      </ul>
-
-      {habits.length > 0 && (
-        <ul className="subgoal-list habit-subgoal-list">
-          {habits.map((s) => {
-            const checkins = checkinsBySubgoal.get(s.id) ?? new Set<string>()
-            const target = s.target_days_per_week ?? 7
-            const metThisWeek = checkins.size >= target
-            return (
-              <li key={s.id} className={`habit-subgoal-item${metThisWeek ? ' met' : ''}`}>
-                <div className="habit-subgoal-header">
-                  <span className="subgoal-item-text">{s.text}</span>
-                  <span className="habit-subgoal-count">
-                    {checkins.size}/{target} días esta semana
-                  </span>
-                  <button
-                    className="subgoal-delete-btn"
-                    onClick={() => onDeleteSubgoal(s)}
-                    title="Borrar submeta"
-                    aria-label="Borrar submeta"
-                  >
-                    <Trash2 size={14} strokeWidth={1.75} />
-                  </button>
-                </div>
-                <HabitDotsRow
-                  checkinDates={checkins}
-                  dimensionColor={dimensionColor}
-                  onToggleToday={() => onToggleHabitToday(s)}
-                  toggling={togglingHabitId === s.id}
-                />
-              </li>
-            )
-          })}
-        </ul>
-      )}
     </div>
   )
 }

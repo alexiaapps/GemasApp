@@ -71,6 +71,12 @@ export async function listGoalsByDimension(userId: string, dimensionKey: string)
   return (data ?? []) as Goal[]
 }
 
+export async function getGoal(goalId: string) {
+  const { data, error } = await supabase.from('goals').select('*').eq('id', goalId).maybeSingle()
+  if (error) throw error
+  return data as Goal | null
+}
+
 export async function createGoal(
   userId: string,
   dimensionKey: string,

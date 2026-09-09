@@ -10,6 +10,7 @@ import TrainingHistory from './pages/TrainingHistory'
 import Logros from './pages/Logros'
 import Areas from './pages/Areas'
 import AreaDetail from './pages/AreaDetail'
+import GoalDetail from './pages/GoalDetail'
 import Afirmaciones from './pages/Afirmaciones'
 
 export default function App() {
@@ -34,6 +35,7 @@ export default function App() {
         <Route path="/logros" element={<Logros />} />
         <Route path="/areas" element={<Areas />} />
         <Route path="/areas/:key" element={<AreaDetail />} />
+        <Route path="/areas/:key/:goalId" element={<GoalDetail />} />
         <Route path="/afirmaciones" element={<Afirmaciones />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

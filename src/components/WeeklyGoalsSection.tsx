@@ -1,4 +1,4 @@
-import { Check, Gem, Lock, Trash2 } from 'lucide-react'
+import { Check, Gem, Trash2 } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
 import HabitDotsRow from './HabitDotsRow'
@@ -236,12 +236,17 @@ export default function WeeklyGoalsSection() {
               const achieved = isAchievedThisWeek(item, checkinsBySubgoal)
               return (
                 <div key={item.id} className="weekly-gem-icon">
-                  {achieved ? (
-                    <Gem size={26} strokeWidth={1.5} style={{ color, fill: color }} />
-                  ) : (
-                    <Lock size={20} strokeWidth={1.75} className="weekly-gem-locked" />
-                  )}
-                  {achieved && <Check size={11} strokeWidth={3} className="weekly-gem-check" />}
+                  <Gem
+                    size={26}
+                    strokeWidth={1.5}
+                    className={`weekly-gem-icon-svg${achieved ? ' achieved' : ''}`}
+                    style={achieved ? { color, fill: color } : undefined}
+                  />
+                  <Check
+                    size={11}
+                    strokeWidth={3}
+                    className={`weekly-gem-check${achieved ? ' visible' : ''}`}
+                  />
                 </div>
               )
             })}
