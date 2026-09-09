@@ -19,6 +19,7 @@ export interface Goal {
   completed_at: string | null
   gems_reward: number
   created_at: string
+  icon_emoji: string | null
 }
 
 export type GoalKind = 'once' | 'habit'
@@ -76,6 +77,7 @@ export async function createGoal(
   text: string,
   category: string,
   gemsReward: number,
+  iconEmoji: string | null = null,
 ) {
   const { data, error } = await supabase
     .from('goals')
@@ -85,6 +87,7 @@ export async function createGoal(
       text,
       category,
       gems_reward: gemsReward,
+      icon_emoji: iconEmoji,
     })
     .select()
     .single()

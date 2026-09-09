@@ -35,11 +35,30 @@ const SCRIPT_WITH_GOAL_SELECT = `
   goal:goals ( id, text, dimension_key, dimension:dimensions ( label, emoji ) )
 `
 
+// Variante con !inner: necesaria para poder filtrar por una columna del recurso embebido (goal.dimension_key).
+const SCRIPT_WITH_GOAL_INNER_SELECT = `
+  *,
+  goal:goals!inner ( id, text, dimension_key, dimension:dimensions ( label, emoji ) )
+`
+
 export async function listAllScriptsForUser(userId: string) {
   const { data, error } = await supabase
     .from('affirmation_scripts')
     .select(SCRIPT_WITH_GOAL_SELECT)
     .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return (data ?? []) as unknown as AffirmationScriptWithGoal[]
+}
+
+/** Todos los guiones cuya meta grande pertenece a esta área (dimension_key). */
+export async function listScriptsForDimension(userId: string, dimensionKey: string) {
+  const { data, error } = await supabase
+    .from('affirmation_scripts')
+    .select(SCRIPT_WITH_GOAL_INNER_SELECT)
+    .eq('user_id', userId)
+    .eq('goal.dimension_key', dimensionKey)
     .order('created_at', { ascending: false })
 
   if (error) throw error

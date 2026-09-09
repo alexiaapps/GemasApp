@@ -167,6 +167,55 @@ h4 {
   margin-bottom: 1.5rem;
 }
 
+.weekly-gems-summary {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.9rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.weekly-gems-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-weight: 700;
+  margin: 0 0 0.7rem;
+}
+
+.weekly-gems-title span {
+  font-weight: 800;
+  color: var(--accent-strong);
+}
+
+.weekly-gems-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.weekly-gem-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.weekly-gem-locked {
+  color: var(--text-dim);
+  opacity: 0.5;
+}
+
+.weekly-gem-check {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: var(--surface);
+  border-radius: 50%;
+  color: #1f9d55;
+}
+
 .weekly-card-stack {
   display: flex;
   flex-direction: column;
@@ -648,6 +697,31 @@ h4 {
   color: var(--text);
 }
 
+.emoji-text-input {
+  font-size: 1.1rem;
+}
+
+.emoji-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.3rem;
+  margin-top: -0.2rem;
+}
+
+.emoji-picker-option {
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 1.15rem;
+  padding: 0.35rem 0;
+  cursor: pointer;
+}
+
+.emoji-picker-option.selected {
+  border-color: var(--text);
+  background: var(--surface);
+}
+
 .area-form button[type='submit'] {
   display: flex;
   align-items: center;
@@ -672,6 +746,7 @@ h4 {
 
 .goal-item {
   background: var(--surface);
+  border: 1.5px solid var(--border);
   border-radius: 10px;
   padding: 0.7rem 0.9rem;
 }
@@ -682,15 +757,19 @@ h4 {
   gap: 0.6rem;
 }
 
-.goal-text {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
+.goal-emoji {
+  flex: 0 0 auto;
+  font-size: 1.3rem;
   cursor: pointer;
 }
 
-.goal-item.completed .goal-text {
+.goal-title {
+  flex: 1;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.goal-item.completed .goal-title {
   color: var(--text-dim);
 }
 
@@ -1156,52 +1235,31 @@ h4 {
   font-size: 0.8rem;
 }
 
-/* --- Affirmation gallery --- */
-.gallery-section {
+/* --- Recursos del área (videos + fotos) --- */
+.resources-section {
   margin-top: 1.5rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border);
 }
 
-.gallery-cover {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.6rem;
-  margin-bottom: 1rem;
+.resources-subsection {
+  margin-bottom: 1.2rem;
 }
 
-.gallery-cover-img {
-  width: 100%;
-  max-width: 360px;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
-  border-radius: 12px;
-}
-
-.gallery-cover-placeholder {
-  width: 100%;
-  max-width: 360px;
-  aspect-ratio: 16 / 9;
+.resources-subsection-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: var(--surface-2);
-  border-radius: 12px;
-  color: var(--text-dim);
-  font-size: 0.85rem;
-}
-
-.gallery-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  justify-content: space-between;
   gap: 0.6rem;
-  margin-bottom: 0.8rem;
+  margin-bottom: 0.6rem;
 }
 
-.gallery-actions button,
-.gallery-cover button {
+.resources-subsection-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.resources-add-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -1209,27 +1267,31 @@ h4 {
   border: 1px solid var(--border);
   color: var(--text);
   border-radius: 8px;
-  padding: 0.5rem 0.9rem;
-  cursor: pointer;
-}
-
-.audio-recorder-active {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.85rem;
-}
-
-.audio-recorder-active button {
-  background: var(--danger);
-  color: #2a0a0a;
-  border: none;
-  border-radius: 8px;
   padding: 0.4rem 0.7rem;
+  font-size: 0.85rem;
   cursor: pointer;
+  flex: 0 0 auto;
 }
 
-.gallery-carousel {
+.resources-video-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.resources-video-item {
+  position: relative;
+}
+
+.resources-video-frame {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: none;
+  border-radius: 10px;
+  display: block;
+}
+
+.resources-photo-carousel {
   display: flex;
   gap: 0.8rem;
   overflow-x: auto;
@@ -1249,17 +1311,6 @@ h4 {
   border-radius: 10px;
   display: block;
   cursor: pointer;
-}
-
-.gallery-item-audio {
-  width: 220px;
-}
-
-.gallery-item-video {
-  width: 220px;
-  height: 124px;
-  border: none;
-  border-radius: 10px;
 }
 
 .gallery-item-delete {

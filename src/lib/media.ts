@@ -82,26 +82,6 @@ export async function getSignedUrls(paths: string[]) {
   return map
 }
 
-export async function uploadCoverImage(userId: string, dimensionKey: string, file: File) {
-  const blob = await compressImage(file)
-  const path = `${userId}/${dimensionKey}/cover.jpg`
-
-  const { error: uploadError } = await supabase.storage
-    .from(BUCKET)
-    .upload(path, blob, { contentType: 'image/jpeg', upsert: true })
-  if (uploadError) throw uploadError
-
-  const { error: dbError } = await supabase
-    .from('affirmation_areas')
-    .upsert(
-      { user_id: userId, dimension_key: dimensionKey, cover_image_path: path },
-      { onConflict: 'user_id,dimension_key' },
-    )
-  if (dbError) throw dbError
-
-  return path
-}
-
 export async function uploadPhotoMedia(
   userId: string,
   dimensionKey: string,

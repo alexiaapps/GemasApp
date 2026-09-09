@@ -1,25 +1,14 @@
 import { Loader2, Wand2 } from 'lucide-react'
-import { useEffect, useRef, useMemo, useState, type FormEvent, type TouchEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
-import AffirmationCard from '../components/AffirmationCard'
-import { getSignedUrls } from '../lib/media'
+import AffirmationPlaylist from '../components/AffirmationPlaylist'
 import { listGoalOptions, type GoalOption } from '../lib/weeklyGoals'
-import {
-  generateAffirmationScript,
-  listAllScriptsForUser,
-  saveScript,
-  uploadScriptAudio,
-  type AffirmationScriptWithGoal,
-  type GeneratedScript,
-} from '../lib/scripts'
-
-const SWIPE_THRESHOLD = 50
+import { generateAffirmationScript, saveScript, type GeneratedScript } from '../lib/scripts'
 
 export default function Afirmaciones() {
   const { user } = useAuth()
 
   const [goalOptions, setGoalOptions] = useState<GoalOption[]>([])
-  const [scripts, setScripts] = useState<AffirmationScriptWithGoal[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -27,18 +16,7 @@ export default function Afirmaciones() {
   const [generating, setGenerating] = useState(false)
   const [draft, setDraft] = useState<GeneratedScript | null>(null)
   const [saving, setSaving] = useState(false)
-
-  const [activeIndex, setActiveIndex] = useState(0)
-  const [coverUrl, setCoverUrl] = useState<string | undefined>(undefined)
-  const touchStartX = useRef<number | null>(null)
-
-  // --- Reproductor único para toda la pantalla ---
-  const audioRef = useRef<HTMLAudioElement>(null)
-  const [playingScriptId, setPlayingScriptId] = useState<string | null>(null)
-  const [isPaused, setIsPaused] = useState(true)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(0)
-  const [audioLoading, setAudioLoading] = useState(false)
+  const [refreshToken, setRefreshToken] = useState(0)
 
   useEffect(() => {
     if (!user) return
@@ -48,13 +26,8 @@ export default function Afirmaciones() {
       setLoading(true)
       setError(null)
       try {
-        const [goals, scriptList] = await Promise.all([
-          listGoalOptions(user!.id),
-          listAllScriptsForUser(user!.id),
-        ])
-        if (cancelled) return
-        setGoalOptions(goals)
-        setScripts(scriptList)
+        const goals = await listGoalOptions(user!.id)
+        if (!cancelled) setGoalOptions(goals)
       } catch (e) {
         if (!cancelled) setError((e as Error).message)
       } finally {
@@ -67,26 +40,6 @@ export default function Afirmaciones() {
       cancelled = true
     }
   }, [user])
-
-  const activeScript = scripts[activeIndex] as AffirmationScriptWithGoal | undefined
-
-  // Portada de la tarjeta visible: se pide fresca cada vez que cambia.
-  useEffect(() => {
-    const path = activeScript?.cover_image_path
-    if (!path) {
-      setCoverUrl(undefined)
-      return
-    }
-    let cancelled = false
-    getSignedUrls([path])
-      .then((map) => {
-        if (!cancelled) setCoverUrl(map.get(path))
-      })
-      .catch((e) => setError((e as Error).message))
-    return () => {
-      cancelled = true
-    }
-  }, [activeScript?.cover_image_path])
 
   const selectedGoal = useMemo(
     () => goalOptions.find((g) => g.id === selectedGoalId) ?? null,
@@ -121,154 +74,14 @@ export default function Afirmaciones() {
     setSaving(true)
     setError(null)
     try {
-      const saved = await saveScript(user.id, selectedGoal.id, draft.title, draft.script)
-      setScripts((prev) => [{ ...saved, goal: selectedGoal }, ...prev])
+      await saveScript(user.id, selectedGoal.id, draft.title, draft.script)
       setDraft(null)
-      setActiveIndex(0)
+      setRefreshToken((t) => t + 1)
     } catch (err) {
       setError((err as Error).message)
     } finally {
       setSaving(false)
     }
-  }
-
-  function handleCoverUploaded(scriptId: string, path: string) {
-    setScripts((prev) => prev.map((s) => (s.id === scriptId ? { ...s, cover_image_path: path } : s)))
-  }
-
-  async function handleAudioRecorded(
-    script: AffirmationScriptWithGoal,
-    blob: Blob,
-    durationSec: number,
-    mimeType: string,
-  ) {
-    if (!user) return
-    setError(null)
-    try {
-      const path = await uploadScriptAudio(user.id, script, blob, mimeType, durationSec)
-      setScripts((prev) =>
-        prev.map((s) =>
-          s.id === script.id ? { ...s, audio_storage_path: path, audio_duration_sec: durationSec } : s,
-        ),
-      )
-      if (playingScriptId === script.id) {
-        audioRef.current?.pause()
-        setPlayingScriptId(null)
-        setIsPaused(true)
-      }
-    } catch (err) {
-      setError((err as Error).message)
-    }
-  }
-
-  function handleDeleted(scriptId: string) {
-    if (playingScriptId === scriptId) {
-      audioRef.current?.pause()
-      setPlayingScriptId(null)
-      setIsPaused(true)
-    }
-    setScripts((prev) => {
-      const next = prev.filter((s) => s.id !== scriptId)
-      setActiveIndex((i) => Math.min(i, Math.max(0, next.length - 1)))
-      return next
-    })
-  }
-
-  function findNextPlayableFrom(index: number): number | null {
-    for (let i = index + 1; i < scripts.length; i++) {
-      if (scripts[i].audio_storage_path) return i
-    }
-    return null
-  }
-
-  function findPrevPlayableFrom(index: number): number | null {
-    for (let i = index - 1; i >= 0; i--) {
-      if (scripts[i].audio_storage_path) return i
-    }
-    return null
-  }
-
-  async function playScriptAt(index: number) {
-    const script = scripts[index]
-    if (!script?.audio_storage_path || !audioRef.current) return
-    setError(null)
-    setAudioLoading(true)
-    try {
-      const map = await getSignedUrls([script.audio_storage_path])
-      const url = map.get(script.audio_storage_path)
-      if (!url) throw new Error('No se pudo cargar el audio')
-      audioRef.current.src = url
-      setActiveIndex(index)
-      setPlayingScriptId(script.id)
-      setCurrentTime(0)
-      await audioRef.current.play()
-      setIsPaused(false)
-    } catch (e) {
-      setError((e as Error).message)
-    } finally {
-      setAudioLoading(false)
-    }
-  }
-
-  function handlePlayPause() {
-    if (!audioRef.current || !activeScript) return
-    if (playingScriptId === activeScript.id) {
-      if (isPaused) {
-        audioRef.current.play()
-        setIsPaused(false)
-      } else {
-        audioRef.current.pause()
-        setIsPaused(true)
-      }
-    } else {
-      playScriptAt(activeIndex)
-    }
-  }
-
-  function handlePrevPlay() {
-    const idx = findPrevPlayableFrom(activeIndex)
-    if (idx != null) playScriptAt(idx)
-  }
-
-  function handleNextPlay() {
-    const idx = findNextPlayableFrom(activeIndex)
-    if (idx != null) playScriptAt(idx)
-  }
-
-  function handleEnded() {
-    setIsPaused(true)
-    const finishedIndex = scripts.findIndex((s) => s.id === playingScriptId)
-    const idx = finishedIndex >= 0 ? findNextPlayableFrom(finishedIndex) : null
-    if (idx != null) {
-      playScriptAt(idx)
-    } else {
-      setPlayingScriptId(null)
-    }
-  }
-
-  function handleSeek(time: number) {
-    if (audioRef.current) audioRef.current.currentTime = time
-    setCurrentTime(time)
-  }
-
-  function goPrevCard() {
-    setActiveIndex((i) => (i - 1 + scripts.length) % scripts.length)
-  }
-
-  function goNextCard() {
-    setActiveIndex((i) => (i + 1) % scripts.length)
-  }
-
-  function handleTouchStart(e: TouchEvent) {
-    touchStartX.current = e.touches[0].clientX
-  }
-
-  function handleTouchEnd(e: TouchEvent) {
-    if (touchStartX.current == null) return
-    const deltaX = e.changedTouches[0].clientX - touchStartX.current
-    touchStartX.current = null
-    if (deltaX > SWIPE_THRESHOLD) goPrevCard()
-    else if (deltaX < -SWIPE_THRESHOLD) goNextCard()
   }
 
   if (loading) {
@@ -332,46 +145,7 @@ export default function Afirmaciones() {
         )}
       </section>
 
-      <section className="playlist-section">
-        <h2>
-          Tu playlist de afirmaciones {scripts.length > 0 && `· ${activeIndex + 1}/${scripts.length}`}
-        </h2>
-
-        {scripts.length === 0 && <p className="subgoal-empty">Todavía no tienes guiones guardados</p>}
-
-        {activeScript && user && (
-          <div className="playlist-carousel" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-            <AffirmationCard
-              key={activeScript.id}
-              userId={user.id}
-              script={activeScript}
-              coverUrl={coverUrl}
-              isPlaying={playingScriptId === activeScript.id && !isPaused}
-              isCurrent={playingScriptId === activeScript.id}
-              currentTime={currentTime}
-              duration={duration}
-              audioLoading={audioLoading}
-              onPlayPause={handlePlayPause}
-              onPrev={handlePrevPlay}
-              onNext={handleNextPlay}
-              onSeek={handleSeek}
-              onCoverUploaded={handleCoverUploaded}
-              onAudioRecorded={(blob, durationSec, mimeType) =>
-                handleAudioRecorded(activeScript, blob, durationSec, mimeType)
-              }
-              onDeleted={handleDeleted}
-            />
-          </div>
-        )}
-      </section>
-
-      <audio
-        ref={audioRef}
-        hidden
-        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
-        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
-        onEnded={handleEnded}
-      />
+      {user && <AffirmationPlaylist userId={user.id} refreshToken={refreshToken} />}
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { Check, Trash2 } from 'lucide-react'
+import { Check, Gem, Lock, Trash2 } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
 import HabitDotsRow from './HabitDotsRow'
@@ -16,6 +16,15 @@ import {
   type GoalOption,
   type WeeklySubgoal,
 } from '../lib/weeklyGoals'
+
+/** Para 'habit', "logrado esta semana" se calcula en vivo por check-ins, no del flag persistido. */
+function isAchievedThisWeek(item: WeeklySubgoal, checkinsBySubgoal: Map<string, Set<string>>): boolean {
+  if (item.goal_kind === 'habit') {
+    const checks = checkinsBySubgoal.get(item.id) ?? new Set<string>()
+    return item.target_days_per_week != null && checks.size >= item.target_days_per_week
+  }
+  return item.completed
+}
 
 export default function WeeklyGoalsSection() {
   const { user } = useAuth()
@@ -201,6 +210,7 @@ export default function WeeklyGoalsSection() {
   }
 
   const completedCount = weeklyList.filter((s) => s.completed).length
+  const achievedCount = weeklyList.filter((s) => isAchievedThisWeek(s, checkinsBySubgoal)).length
   const slotsAvailable = weeklyList.length < MAX_WEEKLY_GOALS
 
   const assignableByGoal = new Map<string, { goal: AssignableSubgoal['goal']; items: AssignableSubgoal[] }>()
@@ -215,6 +225,30 @@ export default function WeeklyGoalsSection() {
 
   return (
     <section className="weekly-goals-section">
+      {weeklyList.length > 0 && (
+        <div className="weekly-gems-summary">
+          <p className="weekly-gems-title">
+            Metas logradas esta semana <span>{achievedCount}/{weeklyList.length}</span>
+          </p>
+          <div className="weekly-gems-row">
+            {weeklyList.map((item) => {
+              const color = item.goal.dimension?.color_hex ?? '#6ee7b7'
+              const achieved = isAchievedThisWeek(item, checkinsBySubgoal)
+              return (
+                <div key={item.id} className="weekly-gem-icon">
+                  {achieved ? (
+                    <Gem size={26} strokeWidth={1.5} style={{ color, fill: color }} />
+                  ) : (
+                    <Lock size={20} strokeWidth={1.75} className="weekly-gem-locked" />
+                  )}
+                  {achieved && <Check size={11} strokeWidth={3} className="weekly-gem-check" />}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       <h2>
         Metas Semanales · {completedCount}/{MAX_WEEKLY_GOALS}
       </h2>

@@ -1,9 +1,9 @@
-import { ArrowLeft, CheckCircle2, ChevronDown, ChevronUp, Circle, Trash2 } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import AffirmationGallery from '../components/AffirmationGallery'
-import GoalAffirmationsSection from '../components/GoalAffirmationsSection'
+import AffirmationPlaylist from '../components/AffirmationPlaylist'
+import AreaResourcesSection from '../components/AreaResourcesSection'
 import HabitDotsRow from '../components/HabitDotsRow'
 import {
   completeGoal,
@@ -23,6 +23,10 @@ import {
 import { currentWeekStartISO, todayISO, weekEndISO } from '../lib/date'
 import { groupCheckinsBySubgoal, listCheckinsForSubgoals, toggleHabitCheckinToday } from '../lib/habits'
 
+const COMMON_GOAL_EMOJIS = [
+  '🎯', '🚀', '💪', '📚', '💰', '❤️', '🧘', '🏃', '🎨', '🎵', '🌱', '🏆', '✈️', '🍎', '💡', '🔥', '⭐', '🎓',
+]
+
 export default function AreaDetail() {
   const { key } = useParams<{ key: string }>()
   const { user } = useAuth()
@@ -33,6 +37,7 @@ export default function AreaDetail() {
   const [error, setError] = useState<string | null>(null)
 
   const [showNewGoalForm, setShowNewGoalForm] = useState(false)
+  const [newGoalEmoji, setNewGoalEmoji] = useState('')
 
   const [expandedGoals, setExpandedGoals] = useState<Record<string, boolean>>({})
   const [subgoalsByGoal, setSubgoalsByGoal] = useState<Record<string, Subgoal[]>>({})
@@ -80,9 +85,10 @@ export default function AreaDetail() {
     if (!text) return
 
     try {
-      const goal = await createGoal(user.id, key, text, category, gemsReward)
+      const goal = await createGoal(user.id, key, text, category, gemsReward, newGoalEmoji || null)
       setGoals((prev) => [goal, ...prev])
       form.reset()
+      setNewGoalEmoji('')
       setShowNewGoalForm(false)
     } catch (err) {
       setError((err as Error).message)
@@ -272,6 +278,30 @@ export default function AreaDetail() {
             <input name="text" type="text" required />
           </label>
           <label>
+            Ícono
+            <input
+              type="text"
+              value={newGoalEmoji}
+              onChange={(e) => setNewGoalEmoji(e.target.value)}
+              placeholder={dimension?.emoji ? `Por defecto: ${dimension.emoji}` : 'Elige un emoji'}
+              maxLength={4}
+              className="emoji-text-input"
+            />
+          </label>
+          <div className="emoji-picker-grid">
+            {COMMON_GOAL_EMOJIS.map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                className={`emoji-picker-option${newGoalEmoji === emoji ? ' selected' : ''}`}
+                onClick={() => setNewGoalEmoji(emoji)}
+                aria-label={`Usar ${emoji}`}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+          <label>
             Categoría
             <input name="category" type="text" placeholder="Otro" />
           </label>
@@ -293,14 +323,11 @@ export default function AreaDetail() {
                 disabled={goal.completed}
                 onChange={() => handleCompleteGoal(goal)}
               />
-              <span className="goal-text" onClick={() => toggleExpand(goal.id)}>
-                {goal.completed ? (
-                  <CheckCircle2 size={15} strokeWidth={1.75} />
-                ) : (
-                  <Circle size={15} strokeWidth={1.75} />
-                )}{' '}
+              <span className="goal-emoji" onClick={() => toggleExpand(goal.id)}>
+                {goal.icon_emoji || dimension?.emoji}
+              </span>
+              <span className="goal-title" onClick={() => toggleExpand(goal.id)}>
                 {goal.text}
-                {goal.category ? ` · ${goal.category}` : ''} · {goal.gems_reward} gemas
               </span>
               <button className="goal-expand-btn" onClick={() => toggleExpand(goal.id)}>
                 {expandedGoals[goal.id] ? (
@@ -334,15 +361,21 @@ export default function AreaDetail() {
                 onToggleHabitToday={(subgoal) => handleToggleHabitToday(subgoal, goal.dimension_key)}
               />
             )}
-
-            {expandedGoals[goal.id] && user && (
-              <GoalAffirmationsSection userId={user.id} goalId={goal.id} />
-            )}
           </li>
         ))}
+        {goals.length === 0 && <li className="subgoal-empty">Sin metas todavía</li>}
       </ul>
 
-      {user && key && <AffirmationGallery userId={user.id} dimensionKey={key} />}
+      {user && key && (
+        <AffirmationPlaylist
+          userId={user.id}
+          dimensionKey={key}
+          title="Mi Visión"
+          emptyMessage="Todavía no tienes afirmaciones en esta área"
+        />
+      )}
+
+      {user && key && <AreaResourcesSection userId={user.id} dimensionKey={key} />}
     </div>
   )
 }
