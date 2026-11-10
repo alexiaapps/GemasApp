@@ -1,4 +1,7 @@
+import { audioExtensionFor, guessAudioMimeType } from './audio'
 import { supabase } from './supabase'
+
+export { guessAudioMimeType }
 
 export interface AffirmationArea {
   id: string
@@ -22,7 +25,7 @@ export interface AffirmationMedia {
   created_at: string
 }
 
-const BUCKET = 'affirmations'
+export const BUCKET = 'affirmations'
 const SIGNED_URL_EXPIRES_IN = 60 * 60 // 1 hora
 
 export async function getAffirmationArea(userId: string, dimensionKey: string) {
@@ -79,26 +82,6 @@ export async function getSignedUrls(paths: string[]) {
   return map
 }
 
-export async function uploadCoverImage(userId: string, dimensionKey: string, file: File) {
-  const blob = await compressImage(file)
-  const path = `${userId}/${dimensionKey}/cover.jpg`
-
-  const { error: uploadError } = await supabase.storage
-    .from(BUCKET)
-    .upload(path, blob, { contentType: 'image/jpeg', upsert: true })
-  if (uploadError) throw uploadError
-
-  const { error: dbError } = await supabase
-    .from('affirmation_areas')
-    .upsert(
-      { user_id: userId, dimension_key: dimensionKey, cover_image_path: path },
-      { onConflict: 'user_id,dimension_key' },
-    )
-  if (dbError) throw dbError
-
-  return path
-}
-
 export async function uploadPhotoMedia(
   userId: string,
   dimensionKey: string,
@@ -121,16 +104,6 @@ export async function uploadPhotoMedia(
   if (dbError) throw dbError
 
   return data as AffirmationMedia
-}
-
-/** Extensión de archivo según el mime type real que grabó MediaRecorder. */
-function audioExtensionFor(mimeType: string): string {
-  return mimeType.startsWith('audio/mp4') ? 'm4a' : 'webm'
-}
-
-/** Mime type aproximado a partir de la extensión guardada, para reproducir con el <source type> correcto. */
-export function guessAudioMimeType(path: string): string {
-  return path.endsWith('.m4a') ? 'audio/mp4' : 'audio/webm'
 }
 
 export async function uploadAudioMedia(

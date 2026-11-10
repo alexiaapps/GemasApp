@@ -22,3 +22,10 @@ export function mondayOfWeek(date: Date): Date {
 export function currentWeekStartISO(): string {
   return toISODate(mondayOfWeek(new Date()))
 }
+
+/** Domingo (último día) de la semana que empieza en `weekStartISO`, como ISO date. */
+export function weekEndISO(weekStartISO: string): string {
+  const d = new Date(`${weekStartISO}T00:00:00`)
+  d.setDate(d.getDate() + 6)
+  return toISODate(d)
+}

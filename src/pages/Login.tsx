@@ -29,7 +29,8 @@ export default function Login() {
   return (
     <div className="auth-screen">
       <form className="auth-form" onSubmit={handleSubmit}>
-        <h1>FitTrack</h1>
+        <img src="/logo-brand.png" alt="" className="auth-logo" />
+        <h1 className="brand-wordmark">Gemas</h1>
         <p className="auth-subtitle">
           {mode === 'signin' ? 'Inicia sesión para continuar' : 'Crea tu cuenta'}
         </p>

@@ -3,8 +3,10 @@ import DailyLogSection from '../components/DailyLogSection'
 
 export default function Inicio() {
   return (
-    <div className="page">
-      <h1>Inicio</h1>
+    <div className="page inicio-page">
+      <div className="inicio-header">
+        <h1>Inicio</h1>
+      </div>
 
       <WeeklyGoalsSection />
 

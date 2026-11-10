@@ -1,25 +1,28 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { ArrowLeft, Trash2 } from 'lucide-react'
+import { useEffect, useState, type FormEvent, type MouseEvent } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import AffirmationGallery from '../components/AffirmationGallery'
+import AffirmationPlaylist from '../components/AffirmationPlaylist'
+import AreaResourcesSection from '../components/AreaResourcesSection'
 import {
   completeGoal,
-  completeSubgoal,
   createGoal,
-  createSubgoal,
   deleteGoal,
-  deleteSubgoal,
   getDimension,
   listGoalsByDimension,
-  listSubgoalsByGoal,
   type Dimension,
   type Goal,
-  type Subgoal,
 } from '../lib/areas'
+import { getContrastTextColor } from '../lib/color'
+
+const COMMON_GOAL_EMOJIS = [
+  '🎯', '🚀', '💪', '📚', '💰', '❤️', '🧘', '🏃', '🎨', '🎵', '🌱', '🏆', '✈️', '🍎', '💡', '🔥', '⭐', '🎓',
+]
 
 export default function AreaDetail() {
   const { key } = useParams<{ key: string }>()
   const { user } = useAuth()
+  const navigate = useNavigate()
 
   const [dimension, setDimension] = useState<Dimension | null>(null)
   const [goals, setGoals] = useState<Goal[]>([])
@@ -27,9 +30,7 @@ export default function AreaDetail() {
   const [error, setError] = useState<string | null>(null)
 
   const [showNewGoalForm, setShowNewGoalForm] = useState(false)
-
-  const [expandedGoals, setExpandedGoals] = useState<Record<string, boolean>>({})
-  const [subgoalsByGoal, setSubgoalsByGoal] = useState<Record<string, Subgoal[]>>({})
+  const [newGoalEmoji, setNewGoalEmoji] = useState('')
 
   useEffect(() => {
     if (!user || !key) return
@@ -72,16 +73,19 @@ export default function AreaDetail() {
     if (!text) return
 
     try {
-      const goal = await createGoal(user.id, key, text, category, gemsReward)
+      const goal = await createGoal(user.id, key, text, category, gemsReward, newGoalEmoji || null)
       setGoals((prev) => [goal, ...prev])
       form.reset()
+      setNewGoalEmoji('')
       setShowNewGoalForm(false)
     } catch (err) {
       setError((err as Error).message)
     }
   }
 
-  async function handleCompleteGoal(goal: Goal) {
+  async function handleCompleteGoal(e: MouseEvent, goal: Goal) {
+    e.preventDefault()
+    e.stopPropagation()
     try {
       setGoals((prev) =>
         prev.map((g) =>
@@ -97,64 +101,9 @@ export default function AreaDetail() {
     }
   }
 
-  async function toggleExpand(goalId: string) {
-    const isExpanded = !!expandedGoals[goalId]
-    setExpandedGoals((prev) => ({ ...prev, [goalId]: !isExpanded }))
-
-    if (!isExpanded && !subgoalsByGoal[goalId]) {
-      try {
-        const subgoals = await listSubgoalsByGoal(goalId)
-        setSubgoalsByGoal((prev) => ({ ...prev, [goalId]: subgoals }))
-      } catch (err) {
-        setError((err as Error).message)
-      }
-    }
-  }
-
-  async function handleCreateSubgoal(goalId: string, e: FormEvent<HTMLFormElement>) {
+  async function handleDeleteGoal(e: MouseEvent, goal: Goal) {
     e.preventDefault()
-    if (!user) return
-
-    const form = e.currentTarget
-    const formData = new FormData(form)
-    const text = String(formData.get('text') ?? '').trim()
-    const gemsReward = Number(formData.get('gems_reward') ?? 10)
-
-    if (!text) return
-
-    try {
-      const subgoal = await createSubgoal(user.id, goalId, text, gemsReward)
-      setSubgoalsByGoal((prev) => ({
-        ...prev,
-        [goalId]: [...(prev[goalId] ?? []), subgoal],
-      }))
-      form.reset()
-    } catch (err) {
-      setError((err as Error).message)
-    }
-  }
-
-  async function handleCompleteSubgoal(goalId: string, subgoal: Subgoal, dimensionKey: string) {
-    try {
-      setSubgoalsByGoal((prev) => ({
-        ...prev,
-        [goalId]: (prev[goalId] ?? []).map((s) =>
-          s.id === subgoal.id ? { ...s, completed: true, completed_at: new Date().toISOString() } : s,
-        ),
-      }))
-      await completeSubgoal(subgoal, dimensionKey)
-    } catch (err) {
-      setError((err as Error).message)
-      setSubgoalsByGoal((prev) => ({
-        ...prev,
-        [goalId]: (prev[goalId] ?? []).map((s) =>
-          s.id === subgoal.id ? { ...s, completed: false, completed_at: null } : s,
-        ),
-      }))
-    }
-  }
-
-  async function handleDeleteGoal(goal: Goal) {
+    e.stopPropagation()
     const base = '¿Seguro que quieres borrar esta meta y todas sus submetas?'
     const message = goal.completed
       ? `Esta meta ya fue completada y ya otorgó ${goal.gems_reward} gemas — esas gemas NO se te van a quitar al borrarla.\n\n${base}`
@@ -165,30 +114,6 @@ export default function AreaDetail() {
     try {
       await deleteGoal(goal.id)
       setGoals((prev) => prev.filter((g) => g.id !== goal.id))
-      setSubgoalsByGoal((prev) => {
-        const next = { ...prev }
-        delete next[goal.id]
-        return next
-      })
-      setExpandedGoals((prev) => {
-        const next = { ...prev }
-        delete next[goal.id]
-        return next
-      })
-    } catch (err) {
-      setError((err as Error).message)
-    }
-  }
-
-  async function handleDeleteSubgoal(goalId: string, subgoal: Subgoal) {
-    if (!window.confirm('¿Seguro que quieres borrar esta submeta?')) return
-
-    try {
-      await deleteSubgoal(subgoal.id)
-      setSubgoalsByGoal((prev) => ({
-        ...prev,
-        [goalId]: (prev[goalId] ?? []).filter((s) => s.id !== subgoal.id),
-      }))
     } catch (err) {
       setError((err as Error).message)
     }
@@ -202,15 +127,20 @@ export default function AreaDetail() {
     )
   }
 
-  return (
-    <div className="page">
-      <Link to="/areas" className="area-back">
-        ← Áreas
-      </Link>
+  const dimColor = dimension?.color_hex ?? '#6ee7b7'
+  const textColor = getContrastTextColor(dimColor)
 
-      <h1>
-        {dimension?.emoji} {dimension?.label ?? key}
-      </h1>
+  return (
+    <div className="page area-detail-page">
+      <div className="area-detail-header" style={{ background: dimColor, color: textColor }}>
+        <Link to="/areas" className="area-detail-back" style={{ color: textColor }}>
+          <ArrowLeft size={18} strokeWidth={1.75} />
+          Áreas
+        </Link>
+        <h1 className="area-detail-title">
+          {dimension?.emoji} {dimension?.label ?? key}
+        </h1>
+      </div>
 
       {error && <p className="auth-error">{error}</p>}
 
@@ -225,6 +155,30 @@ export default function AreaDetail() {
             <input name="text" type="text" required />
           </label>
           <label>
+            Ícono
+            <input
+              type="text"
+              value={newGoalEmoji}
+              onChange={(e) => setNewGoalEmoji(e.target.value)}
+              placeholder={dimension?.emoji ? `Por defecto: ${dimension.emoji}` : 'Elige un emoji'}
+              maxLength={4}
+              className="emoji-text-input"
+            />
+          </label>
+          <div className="emoji-picker-grid">
+            {COMMON_GOAL_EMOJIS.map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                className={`emoji-picker-option${newGoalEmoji === emoji ? ' selected' : ''}`}
+                onClick={() => setNewGoalEmoji(emoji)}
+                aria-label={`Usar ${emoji}`}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+          <label>
             Categoría
             <input name="category" type="text" placeholder="Otro" />
           </label>
@@ -237,119 +191,56 @@ export default function AreaDetail() {
       )}
 
       <ul className="goal-list">
-        {goals.map((goal) => (
-          <li key={goal.id} className={`goal-item${goal.completed ? ' completed' : ''}`}>
-            <div className="goal-row">
-              <input
-                type="checkbox"
-                checked={goal.completed}
-                disabled={goal.completed}
-                onChange={() => handleCompleteGoal(goal)}
-              />
-              <span className="goal-text" onClick={() => toggleExpand(goal.id)}>
-                {goal.completed ? '✅' : '⬜'} {goal.text}
-                {goal.category ? ` · ${goal.category}` : ''} · {goal.gems_reward} gemas
-              </span>
-              <button className="goal-expand-btn" onClick={() => toggleExpand(goal.id)}>
-                {expandedGoals[goal.id] ? '▲' : '▼'}
-              </button>
-              <button
-                className="goal-delete-btn"
-                onClick={() => handleDeleteGoal(goal)}
-                title="Borrar meta"
-                aria-label="Borrar meta"
+        {goals.map((goal) => {
+          const cardText = textColor
+          return (
+            <li key={goal.id} className={`goal-item goal-item-colored${goal.completed ? ' completed' : ''}`}>
+              <div
+                className="goal-row"
+                style={{ background: dimColor, color: cardText, cursor: 'pointer' }}
+                onClick={() => navigate(`/areas/${key}/${goal.id}`)}
+                role="link"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') navigate(`/areas/${key}/${goal.id}`)
+                }}
               >
-                🗑
-              </button>
-            </div>
-
-            {expandedGoals[goal.id] && (
-              <SubgoalsSection
-                goal={goal}
-                subgoals={subgoalsByGoal[goal.id] ?? []}
-                onCreateSubgoal={(e) => handleCreateSubgoal(goal.id, e)}
-                onCompleteSubgoal={(subgoal) =>
-                  handleCompleteSubgoal(goal.id, subgoal, goal.dimension_key)
-                }
-                onDeleteSubgoal={(subgoal) => handleDeleteSubgoal(goal.id, subgoal)}
-              />
-            )}
-          </li>
-        ))}
+                <input
+                  type="checkbox"
+                  checked={goal.completed}
+                  disabled={goal.completed}
+                  onClick={(e) => handleCompleteGoal(e, goal)}
+                  onChange={() => {}}
+                  style={{ accentColor: cardText }}
+                />
+                <span className="goal-emoji">{goal.icon_emoji || dimension?.emoji}</span>
+                <span className="goal-title">{goal.text}</span>
+                <button
+                  className="goal-delete-btn"
+                  onClick={(e) => handleDeleteGoal(e, goal)}
+                  title="Borrar meta"
+                  aria-label="Borrar meta"
+                  style={{ color: cardText }}
+                >
+                  <Trash2 size={15} strokeWidth={1.75} />
+                </button>
+              </div>
+            </li>
+          )
+        })}
+        {goals.length === 0 && <li className="subgoal-empty">Sin metas todavía</li>}
       </ul>
 
-      {user && key && <AffirmationGallery userId={user.id} dimensionKey={key} />}
-    </div>
-  )
-}
-
-function SubgoalsSection({
-  subgoals,
-  onCreateSubgoal,
-  onCompleteSubgoal,
-  onDeleteSubgoal,
-}: {
-  goal: Goal
-  subgoals: Subgoal[]
-  onCreateSubgoal: (e: FormEvent<HTMLFormElement>) => void
-  onCompleteSubgoal: (subgoal: Subgoal) => void
-  onDeleteSubgoal: (subgoal: Subgoal) => void
-}) {
-  const [showForm, setShowForm] = useState(false)
-  const pending = subgoals.filter((s) => !s.completed)
-  const completed = subgoals.filter((s) => s.completed)
-
-  return (
-    <div className="subgoals-section">
-      <button className="area-new-goal-btn" onClick={() => setShowForm((v) => !v)}>
-        + Agregar submeta
-      </button>
-
-      {showForm && (
-        <form
-          className="area-form"
-          onSubmit={(e) => {
-            onCreateSubgoal(e)
-            setShowForm(false)
-          }}
-        >
-          <label>
-            Texto
-            <input name="text" type="text" required />
-          </label>
-          <label>
-            Gemas de recompensa
-            <input name="gems_reward" type="number" defaultValue={10} min={0} />
-          </label>
-          <button type="submit">Guardar submeta</button>
-        </form>
+      {user && key && (
+        <AffirmationPlaylist
+          userId={user.id}
+          dimensionKey={key}
+          title="Mi Visión"
+          emptyMessage="Todavía no tienes afirmaciones en esta área"
+        />
       )}
 
-      <ul className="subgoal-list">
-        {pending.map((s) => (
-          <li key={s.id}>
-            <input type="checkbox" checked={false} onChange={() => onCompleteSubgoal(s)} />
-            <span className="subgoal-item-text">
-              {s.text} · {s.gems_reward} gemas
-            </span>
-            <button
-              className="subgoal-delete-btn"
-              onClick={() => onDeleteSubgoal(s)}
-              title="Borrar submeta"
-              aria-label="Borrar submeta"
-            >
-              🗑
-            </button>
-          </li>
-        ))}
-        {completed.map((s) => (
-          <li key={s.id} className="subgoal-completed">
-            <input type="checkbox" checked disabled />
-            <span style={{ textDecoration: 'line-through' }}>{s.text}</span> · {s.gems_reward} gemas
-          </li>
-        ))}
-        {subgoals.length === 0 && <li className="subgoal-empty">Sin submetas todavía</li>}
-      </ul>
+      {user && key && <AreaResourcesSection userId={user.id} dimensionKey={key} />}
     </div>
   )
 }
