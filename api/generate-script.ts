@@ -21,8 +21,11 @@ interface GenerateScriptBody {
 }
 
 const MODEL = 'claude-sonnet-5-5'
-const MAX_TOKENS = 1200 // ~450 palabras en español son ~900 tokens, más la envoltura JSON
-const ANTHROPIC_TIMEOUT_MS = 25_000
+// Con claude-sonnet-5-5 el español gasta ~3.8 tokens por palabra: 450 palabras son ~1700 tokens (más el JSON y el título).
+// Con 1200 el guion llegaba cortado a la mitad y el JSON no cerraba. Es un tope, no un gasto: solo se cobran los tokens generados.
+const MAX_TOKENS = 3000
+// Un guion completo tarda más en generarse: el tiempo máximo del servidor debe quedar por debajo del del navegador (60 s).
+const ANTHROPIC_TIMEOUT_MS = 55_000
 const ANTHROPIC_MAX_RETRIES = 1
 
 // Topes de entrada: todo lo que llega del cliente termina dentro del prompt.
@@ -183,7 +186,11 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     const parsed = textBlock ? extractJson(textBlock.text) : null
 
     if (!parsed) {
-      console.error('generate-script: respuesta no era el JSON esperado:', textBlock?.text)
+      // stop_reason 'max_tokens' = el modelo se quedó sin tokens y el JSON quedó cortado.
+      console.error(
+        `generate-script: respuesta no era el JSON esperado (stop_reason=${message.stop_reason}, output_tokens=${message.usage.output_tokens}, max_tokens=${MAX_TOKENS}):`,
+        textBlock?.text,
+      )
       res.status(502).json({ error: 'El modelo no devolvió un formato válido' })
       return
     }
