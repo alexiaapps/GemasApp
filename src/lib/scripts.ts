@@ -142,7 +142,8 @@ export async function uploadScriptCover(userId: string, script: AffirmationScrip
   return path
 }
 
-const GENERATE_TIMEOUT_MS = 30000
+// Mayor que el timeout de Anthropic en el servidor (55 s): un guion completo tarda en generarse.
+const GENERATE_TIMEOUT_MS = 60000
 
 /** Mismo tope que valida el servidor (api/generate-script.ts); los inputs de meta lo usan como maxLength. */
 export const MAX_GOAL_TEXT_LENGTH = 200
