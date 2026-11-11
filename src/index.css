@@ -3203,3 +3203,588 @@ h4 {
     font-size: max(0.95rem, 11.5cqw);
   }
 }
+
+/* =====================================================================
+   LOGROS: rueda de crecimiento, badges e historial
+   ===================================================================== */
+.logros-header {
+  background: #fdf1e7;
+  margin: -1.2rem calc(var(--pad-x) * -1) 1.4rem;
+  padding: 1.5rem var(--pad-x) 1.3rem;
+  border-bottom: 3px solid #111111;
+}
+
+.logros-header h1 {
+  margin: 0;
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: #111111;
+}
+
+.logros-header-subtitle {
+  margin: 0.3rem 0 0;
+  font-weight: 600;
+  color: #4a4550;
+}
+
+.logros-section {
+  margin: 0 0 2.2rem;
+}
+
+.logros-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.9rem;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #111111;
+}
+
+.logros-count {
+  font-size: 0.8rem;
+  font-weight: 800;
+  background: #ffffff;
+  border: 2px solid #111111;
+  border-radius: 999px;
+  padding: 0.05rem 0.55rem;
+}
+
+.logros-muted {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+.logros-empty {
+  margin: 0;
+  padding: 1.4rem 1.2rem;
+  text-align: center;
+  font-weight: 600;
+  color: #4a4550;
+  background: var(--surface-2);
+  border: 2px dashed rgba(17, 17, 17, 0.4);
+  border-radius: 22px;
+}
+
+/* --- Rueda de crecimiento --- */
+.wheel-card {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 1rem 1rem 1.1rem;
+  background: #ffffff;
+  border: 3px solid #111111;
+  border-radius: 24px;
+  box-shadow: 4px 5px 0 #111111;
+}
+
+.period-selector {
+  display: flex;
+  margin-bottom: 0.7rem;
+  background: #ffffff;
+  border: 2px solid #111111;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.period-btn {
+  flex: 1;
+  padding: 0.5rem 0.3rem;
+  background: transparent;
+  color: #111111;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.period-btn + .period-btn {
+  border-left: 2px solid #111111;
+}
+
+.period-btn.active {
+  background: #111111;
+  color: #ffffff;
+}
+
+.wheel-box {
+  transition: opacity 0.2s;
+}
+
+.wheel-box.loading {
+  opacity: 0.55;
+}
+
+.wheel-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.wheel-guide {
+  fill: none;
+  stroke: rgba(17, 17, 17, 0.2);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 5;
+}
+
+.wheel-wedge {
+  cursor: pointer;
+  outline: none;
+  transform-origin: 50% 50%;
+  transition: transform 0.15s;
+}
+
+.wheel-wedge path {
+  stroke: #111111;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+
+.wheel-wedge.empty path {
+  stroke: rgba(17, 17, 17, 0.35);
+  stroke-width: 1.8;
+  stroke-dasharray: 4 3;
+}
+
+.wheel-wedge.selected {
+  transform: scale(1.035);
+}
+
+.wheel-wedge.selected path,
+.wheel-wedge:focus-visible path {
+  stroke: #111111;
+  stroke-width: 4;
+  stroke-dasharray: none;
+}
+
+.wheel-emoji {
+  font-size: 24px;
+  user-select: none;
+}
+
+.wheel-wedge.empty .wheel-emoji {
+  opacity: 0.45;
+}
+
+.wheel-total {
+  font-family: var(--font-display);
+  font-size: 46px;
+  font-weight: 800;
+  fill: #111111;
+}
+
+.wheel-total-label {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 700;
+  fill: #4a4550;
+}
+
+.wheel-detail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  min-height: 3.6rem;
+  margin-top: 0.7rem;
+  padding: 0.5rem 0.9rem;
+  text-align: center;
+  border: 2px solid #111111;
+  border-radius: 20px;
+}
+
+.wheel-detail-emoji {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  border: 2.5px solid #111111;
+  border-radius: 14px;
+}
+
+.wheel-detail-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 0.9rem;
+  color: #4a4550;
+}
+
+.wheel-detail-text strong {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  line-height: 1.1;
+  color: #111111;
+}
+
+/* Leyenda de la rueda: las 12 áreas con sus gemas del periodo */
+.wheel-legend {
+  list-style: none;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.legend-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  color: #111111;
+  font-family: var(--font-body);
+  text-align: left;
+  border: 2.5px solid #111111;
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.legend-item.selected {
+  box-shadow: 2px 3px 0 #111111;
+}
+
+.legend-emoji {
+  flex: 0 0 auto;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.legend-item.empty .legend-emoji {
+  opacity: 0.5;
+}
+
+.legend-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.legend-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.legend-gems {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #4a4550;
+}
+
+/* --- Badges --- */
+.badge-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0 5px 0 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.badge-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 1rem 0.7rem 0.9rem;
+  text-align: center;
+  color: #111111;
+  border: 3px solid #111111;
+  border-radius: 24px;
+  box-shadow: 4px 5px 0 #111111;
+}
+
+.badge-emblem {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.3rem;
+  font-size: 2.2rem;
+  border: 3px solid #111111;
+  border-radius: 50%;
+}
+
+.badge-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.badge-date {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #4a4550;
+}
+
+.badge-gems {
+  margin-top: 0.2rem;
+  padding: 0.1rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  background: #ffffff;
+  border: 2px solid #111111;
+  border-radius: 999px;
+}
+
+/* --- Historial (línea de tiempo) --- */
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0 5px 0 0;
+}
+
+.timeline-item {
+  position: relative;
+  padding: 0 0 1.1rem 2.1rem;
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 1.3rem;
+  bottom: -0.3rem;
+  width: 3px;
+  background: #111111;
+}
+
+.timeline-item:last-child::before {
+  display: none;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: 0;
+  top: 1rem;
+  z-index: 1;
+  width: 19px;
+  height: 19px;
+  border: 3px solid #111111;
+  border-radius: 50%;
+}
+
+.timeline-card {
+  position: relative;
+  overflow: hidden;
+  background: #ffffff;
+  border: 3px solid #111111;
+  border-radius: 22px;
+  box-shadow: 4px 5px 0 #111111;
+}
+
+.timeline-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0.65rem;
+  background: var(--area-color);
+}
+
+.timeline-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.8rem 0.9rem 0.8rem 1.5rem;
+  background: none;
+  border: none;
+  color: #111111;
+  font-family: var(--font-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.timeline-emoji {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  border: 2.5px solid #111111;
+  border-radius: 14px;
+}
+
+.timeline-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.timeline-title {
+  font-weight: 800;
+  font-size: 1.02rem;
+  line-height: 1.2;
+}
+
+.timeline-meta {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #6b6573;
+}
+
+.timeline-chevron {
+  flex: 0 0 auto;
+  transition: transform 0.2s;
+}
+
+.timeline-card.open .timeline-chevron {
+  transform: rotate(180deg);
+}
+
+.timeline-panel {
+  padding: 0.2rem 0.9rem 0.9rem 1.5rem;
+  border-top: 2px solid rgba(17, 17, 17, 0.12);
+}
+
+.timeline-subgoals {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.timeline-subgoal {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.timeline-subgoal-check {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111111;
+  border: 2px solid #111111;
+  border-radius: 50%;
+}
+
+.timeline-subgoal-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.timeline-subgoal-text {
+  font-weight: 700;
+  font-size: 0.92rem;
+  line-height: 1.2;
+  color: #111111;
+}
+
+.timeline-subgoal-meta {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.timeline-kind {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.05rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #111111;
+  background: #ffffff;
+  border: 2px solid #111111;
+  border-radius: 999px;
+}
+
+.timeline-kind.habit {
+  background: #fdf1e7;
+}
+
+.timeline-link {
+  display: inline-block;
+  margin-top: 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #111111;
+}
+
+@media (min-width: 600px) {
+  .badge-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .badge-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.4rem;
+  }
+
+  /* Rueda: en laptop va a la izquierda y el selector y el detalle a la derecha, para que
+     el detalle del gajo tocado se vea sin tener que hacer scroll */
+  .wheel-card {
+    max-width: 880px;
+    display: grid;
+    grid-template-columns: minmax(0, 440px) minmax(0, 1fr);
+    grid-template-rows: auto auto auto 1fr;
+    column-gap: 2rem;
+    align-items: start;
+  }
+
+  .wheel-card > .period-selector {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .wheel-card > .auth-error,
+  .wheel-card > .logros-muted {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .wheel-box {
+    grid-column: 1;
+    grid-row: 1 / span 4;
+  }
+
+  .wheel-detail {
+    grid-column: 2;
+    grid-row: 3;
+    margin-top: 0.3rem;
+  }
+
+  .wheel-legend {
+    grid-column: 2;
+    grid-row: 4;
+    margin-top: 0.2rem;
+    align-self: start;
+  }
+
+  /* La línea de tiempo no se estira a todo el ancho: columna cómoda alineada con el título */
+  .timeline {
+    max-width: 760px;
+  }
+}

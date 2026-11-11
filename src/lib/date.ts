@@ -19,6 +19,11 @@ export function mondayOfWeek(date: Date): Date {
   return d
 }
 
+/** Día 1 del mes de `date` a las 00:00, en horario local. */
+export function startOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0)
+}
+
 export function currentWeekStartISO(): string {
   return toISODate(mondayOfWeek(new Date()))
 }
