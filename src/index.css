@@ -95,6 +95,17 @@ h4 {
   color: transparent;
 }
 
+/* --- Layout responsive ---
+   --pad-x es el padding horizontal del contenido. En celular vale 1.2rem (igual que siempre);
+   en pantallas anchas crece para centrar el contenido en --content-max. Las bandas de color
+   usan la misma variable como margen negativo, así llegan de borde a borde y su texto queda
+   alineado con la columna de contenido. */
+:root {
+  --content-max: 1100px;
+  --nav-w: 0px;
+  --pad-x: max(1.2rem, calc((100vw - var(--nav-w) - var(--content-max)) / 2));
+}
+
 /* --- App shell --- */
 .app-shell {
   display: flex;
@@ -146,7 +157,7 @@ h4 {
 .app-content {
   flex: 1;
   overflow-y: auto;
-  padding: 1.2rem;
+  padding: 1.2rem var(--pad-x);
   padding-bottom: 5rem;
 }
 
@@ -164,8 +175,8 @@ h4 {
 
 .inicio-header {
   background: #fdf1e7;
-  margin: -1.2rem -1.2rem 1.4rem;
-  padding: 1.5rem 1.2rem 1.3rem;
+  margin: -1.2rem calc(var(--pad-x) * -1) 1.4rem;
+  padding: 1.5rem var(--pad-x) 1.3rem;
 }
 
 .inicio-header h1 {
@@ -732,8 +743,8 @@ h4 {
 /* --- Áreas: nivel 1 (Mis áreas) --- */
 .areas-header {
   background: #fdf1e7;
-  margin: -1.2rem -1.2rem 1.4rem;
-  padding: 1.5rem 1.2rem 1.3rem;
+  margin: -1.2rem calc(var(--pad-x) * -1) 1.4rem;
+  padding: 1.5rem var(--pad-x) 1.3rem;
   border-bottom: 3px solid #111111;
 }
 
@@ -789,8 +800,8 @@ h4 {
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
-  padding: 1rem 1.2rem 1.3rem;
-  margin: -1.2rem -1.2rem 1.4rem;
+  padding: 1rem var(--pad-x) 1.3rem;
+  margin: -1.2rem calc(var(--pad-x) * -1) 1.4rem;
   border-bottom: 3px solid #111111;
 }
 
@@ -856,8 +867,8 @@ h4 {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
-  padding: 1rem 1.2rem 1.3rem;
-  margin: -1.2rem -1.2rem 1.4rem;
+  padding: 1rem var(--pad-x) 1.3rem;
+  margin: -1.2rem calc(var(--pad-x) * -1) 1.4rem;
   border-bottom: 3px solid #111111;
   color: #111111;
 }
@@ -2408,8 +2419,8 @@ h4 {
   gap: 0.7rem;
   background: var(--accent-strong);
   color: var(--text);
-  padding: 0.8rem 1.2rem;
-  margin: -1.2rem -1.2rem 0.9rem;
+  padding: 0.8rem var(--pad-x);
+  margin: -1.2rem calc(var(--pad-x) * -1) 0.9rem;
 }
 
 .training-header-back {
@@ -2767,4 +2778,269 @@ h4 {
   font-size: 0.8rem;
   font-style: italic;
   margin-top: 0.2rem;
+}
+
+/* Subtítulo de la página del programa: alineado a la izquierda como el resto */
+.program-subtitle {
+  margin: 0 0 0.5rem;
+  text-align: left;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+/* <select> propios: borde negro fino, esquinas redondeadas, tipografía de la app y flecha propia */
+.area-form select,
+.weekly-picker select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  background-color: var(--surface);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23111111' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  border: 1.5px solid #111111;
+  border-radius: 10px;
+  padding: 0.5rem 2.2rem 0.5rem 0.7rem;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.area-form select:focus,
+.weekly-picker select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* =====================================================================
+   RESPONSIVE (mobile-first: lo de arriba es el celular y NO cambia)
+   Tablet ≥ 600px  ·  Laptop ≥ 1024px
+   ===================================================================== */
+
+/* --- Tablet --- */
+@media (min-width: 600px) {
+  .areas-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Emoji y nombre proporcionales al tamaño real de la tarjeta (con mínimo = tamaño de celular) */
+  .area-card {
+    container-type: inline-size;
+  }
+
+  .area-emoji {
+    font-size: 3rem;
+    font-size: max(3rem, 29cqw);
+  }
+
+  .area-label {
+    font-size: 1.05rem;
+    font-size: max(1.05rem, 10.5cqw);
+  }
+
+  /* La tarjeta de afirmaciones no se estira: ancho máximo centrado */
+  .playlist-carousel {
+    max-width: 520px;
+    margin-inline: auto;
+  }
+
+  .afirmaciones-page {
+    max-width: 560px;
+    margin-inline: auto;
+  }
+
+  .resources-video-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+}
+
+/* --- Laptop: la barra inferior pasa a barra lateral izquierda --- */
+@media (min-width: 1024px) {
+  :root {
+    --nav-w: 230px;
+  }
+
+  .app-shell {
+    display: grid;
+    grid-template-columns: var(--nav-w) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .app-header {
+    grid-column: 1 / -1;
+    padding-inline: 1.6rem;
+  }
+
+  .tab-bar {
+    grid-column: 1;
+    grid-row: 2;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 0.35rem;
+    padding: 1.2rem 0.9rem;
+    border-top: none;
+    border-right: 1px solid rgba(0, 0, 0, 0.08);
+    position: static;
+    overflow-y: auto;
+  }
+
+  .tab-item {
+    flex-direction: row;
+    gap: 0.8rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    min-width: 0;
+  }
+
+  .app-content {
+    grid-column: 2;
+    grid-row: 2;
+    padding-bottom: 2.5rem;
+  }
+
+  /* Sin barra inferior: el botón fijo de la sesión de entrenamiento va pegado abajo, junto a la barra lateral */
+  .training-finish-bar {
+    left: var(--nav-w);
+    bottom: 0;
+  }
+
+  .areas-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.4rem;
+  }
+
+  /* Áreas nivel 2 y 3: dos columnas de tarjetas */
+  .goal-list,
+  .subgoal-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.1rem 1.4rem;
+    align-items: start;
+  }
+
+  .goal-list > .subgoal-empty,
+  .subgoal-cards > .subgoal-empty {
+    grid-column: 1 / -1;
+  }
+
+  /* Recursos: las fotos pasan de carrusel a cuadrícula, con más elementos por fila */
+  .resources-photo-carousel {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 1rem;
+    overflow: visible;
+  }
+
+  .resources-photo-carousel .gallery-item {
+    width: auto;
+  }
+
+  .resources-photo-carousel .gallery-item-photo {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+  }
+
+  /* Inicio: tarjeta de gemas a la izquierda (fija) y metas/bitácora a la derecha.
+     Solo si hay metas semanales (si no, no hay tarjeta de gemas y se queda en una columna). */
+  .inicio-page:has(.weekly-gems-summary) {
+    display: grid;
+    grid-template-columns: 340px minmax(0, 1fr);
+    column-gap: 2rem;
+    align-items: start;
+  }
+
+  .inicio-page:has(.weekly-gems-summary) > .inicio-header {
+    grid-column: 1 / -1;
+  }
+
+  .inicio-page:has(.weekly-gems-summary) .weekly-goals-section {
+    display: contents;
+  }
+
+  .inicio-page:has(.weekly-gems-summary) .weekly-goals-section > * {
+    grid-column: 2;
+  }
+
+  .inicio-page:has(.weekly-gems-summary) .weekly-goals-section > .weekly-gems-summary {
+    grid-column: 1;
+    grid-row: 2 / span 12;
+    position: sticky;
+    top: 0;
+    margin-bottom: 0;
+  }
+
+  .inicio-page:has(.weekly-gems-summary) > p,
+  .inicio-page:has(.weekly-gems-summary) > .daily-log-section {
+    grid-column: 2;
+  }
+}
+
+/* --- Ajustes de proporción (revisados pantalla por pantalla) --- */
+@media (min-width: 600px) {
+  /* Acciones de la meta: botones del tamaño de su texto, en fila */
+  .goal-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .goal-action-btn,
+  .goal-action-done {
+    padding: 0.7rem 1.4rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* El botón de Inicio no se estira al ancho de su columna de la cuadrícula */
+  .inicio-page:has(.weekly-gems-summary) .weekly-goals-section > .area-new-goal-btn {
+    justify-self: start;
+  }
+
+  /* Entrenamiento: listas en una columna cómoda, alineada con el título */
+  .entrenamiento-top-actions,
+  .program-card,
+  .program-overall-progress,
+  .program-week {
+    max-width: 760px;
+  }
+
+  /* Sesión de entrenamiento: los ejercicios van en dos columnas.
+     La banda, el contador y los avisos ocupan todo el ancho. */
+  .training-page {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 1.4rem;
+    align-items: start;
+  }
+
+  .training-page > :not(.training-exercise-card):not(.training-finish-bar) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Laptop ancha (≥ 1280px): Áreas en 6 columnas (2 filas completas, sin scroll) con tarjetas más compactas */
+@media (min-width: 1280px) {
+  .areas-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1rem;
+  }
+
+  .area-card {
+    padding: 0.7rem 0.8rem;
+    border-radius: 20px;
+  }
+
+  .area-emoji {
+    font-size: 2.2rem;
+    font-size: max(2.2rem, 30cqw);
+  }
+
+  .area-label {
+    font-size: 0.95rem;
+    font-size: max(0.95rem, 11.5cqw);
+  }
 }

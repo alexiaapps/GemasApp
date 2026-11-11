@@ -422,7 +422,7 @@ export default function WeeklyGoalsSection() {
                   </label>
                 )}
                 <label>
-                  Gemas de recompensa {newGoalKind === 'habit' ? '(por cada día marcado)' : ''}
+                  Gemas de recompensa {newGoalKind === 'habit' ? '(al completar todos los días)' : ''}
                   <input key={newGoalKind} name="gems_reward" type="number" defaultValue={newGoalKind === 'habit' ? 2 : 10} min={0} />
                 </label>
                 <button type="submit" disabled={!slotsAvailable}>

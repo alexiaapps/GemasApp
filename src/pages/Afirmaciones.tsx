@@ -86,7 +86,7 @@ export default function Afirmaciones() {
 
   if (loading) {
     return (
-      <div className="page">
+      <div className="page afirmaciones-page">
         <h1>Afirmaciones</h1>
         <p>Cargando...</p>
       </div>
@@ -94,7 +94,7 @@ export default function Afirmaciones() {
   }
 
   return (
-    <div className="page">
+    <div className="page afirmaciones-page">
       <h1>Afirmaciones</h1>
       {error && <p className="auth-error">{error}</p>}
 
