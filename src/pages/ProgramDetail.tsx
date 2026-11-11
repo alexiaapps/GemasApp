@@ -117,7 +117,7 @@ export default function ProgramDetail() {
       </Link>
 
       <h1>{program.name}</h1>
-      {program.goal && <p className="auth-subtitle">{program.goal}</p>}
+      {program.goal && <p className="program-subtitle">{program.goal}</p>}
       {error && <p className="auth-error">{error}</p>}
 
       <div className="program-overall-progress">

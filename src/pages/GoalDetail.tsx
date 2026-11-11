@@ -403,7 +403,7 @@ function SubgoalForm({ onSubmit }: { onSubmit: (kind: GoalKind, e: FormEvent<HTM
         </label>
       )}
       <label>
-        Gemas de recompensa {kind === 'habit' ? '(por cada día marcado)' : ''}
+        Gemas de recompensa {kind === 'habit' ? '(al completar todos los días)' : ''}
         <input key={kind} name="gems_reward" type="number" defaultValue={kind === 'habit' ? 2 : 10} min={0} />
       </label>
       <button type="submit">Guardar submeta</button>
