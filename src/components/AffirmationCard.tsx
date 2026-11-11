@@ -1,5 +1,5 @@
-import { BookOpen, Loader2, Mic, MoreHorizontal, Pause, Play, SkipBack, SkipForward } from 'lucide-react'
-import { useRef, useState, type ChangeEvent } from 'react'
+import { BookOpen, Loader2, Mic, MoreHorizontal, Pause, Play, SkipBack, SkipForward, Trash2, X } from 'lucide-react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { deleteScript, uploadScriptCover, type AffirmationScriptWithGoal } from '../lib/scripts'
 import TeleprompterRecorder from './TeleprompterRecorder'
 
@@ -48,9 +48,11 @@ export default function AffirmationCard({
   const [coverBusy, setCoverBusy] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const [showTeleprompter, setShowTeleprompter] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const coverInputRef = useRef<HTMLInputElement>(null)
+  const closeBtnRef = useRef<HTMLButtonElement>(null)
 
   async function handleCoverChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -68,13 +70,33 @@ export default function AffirmationCard({
     }
   }
 
+  function closeReader() {
+    setShowMenu(false)
+    setConfirmingDelete(false)
+  }
+
+  // Escape cierra primero la confirmación de borrado y luego el lector; el foco empieza en la ✕
+  useEffect(() => {
+    if (!showMenu) return
+    closeBtnRef.current?.focus()
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== 'Escape') return
+      e.stopPropagation()
+      if (confirmingDelete) setConfirmingDelete(false)
+      else closeReader()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [showMenu, confirmingDelete])
+
   async function handleDelete() {
-    if (!window.confirm('¿Seguro que quieres borrar esta afirmación?')) return
+    setError(null)
     try {
       await deleteScript(script)
       onDeleted(script.id)
     } catch (err) {
       setError((err as Error).message)
+      setConfirmingDelete(false)
     }
   }
 
@@ -172,31 +194,72 @@ export default function AffirmationCard({
       )}
 
       {showMenu && (
-        <div className="sheet-overlay" onClick={() => setShowMenu(false)}>
-          <div className="sheet-content" onClick={(e) => e.stopPropagation()}>
-            <p className="sheet-legend">
-              {script.goal?.dimension?.emoji} {script.goal?.dimension?.label} · {script.goal?.text}
-            </p>
-            <h3>{script.title}</h3>
-            <p className="script-text">{script.script_text}</p>
-            <div className="sheet-actions">
-              {script.audio_storage_path && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMenu(false)
-                    setShowTeleprompter(true)
-                  }}
-                >
-                  Regrabar
+        <div className="sheet-overlay script-reader-overlay" onClick={closeReader}>
+          <div
+            className="sheet-content script-reader"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Guion: ${script.title}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="script-reader-head">
+              <p className="sheet-legend">
+                {script.goal?.dimension?.emoji} {script.goal?.dimension?.label} · {script.goal?.text}
+              </p>
+              <button
+                ref={closeBtnRef}
+                type="button"
+                className="script-reader-close"
+                onClick={closeReader}
+                aria-label="Cerrar"
+              >
+                <X size={20} strokeWidth={2.25} />
+              </button>
+            </div>
+
+            <div className="script-reader-body">
+              <h3>{script.title}</h3>
+              <p className="script-text">{script.script_text}</p>
+
+              {error && <p className="auth-error">{error}</p>}
+
+              <div className="sheet-actions">
+                {script.audio_storage_path && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeReader()
+                      setShowTeleprompter(true)
+                    }}
+                  >
+                    Regrabar
+                  </button>
+                )}
+                <button type="button" onClick={closeReader}>
+                  Cerrar
                 </button>
-              )}
-              <button type="button" className="sheet-danger" onClick={handleDelete}>
-                Borrar afirmación
-              </button>
-              <button type="button" onClick={() => setShowMenu(false)}>
-                Cerrar
-              </button>
+              </div>
+
+              <div className="script-reader-danger">
+                {confirmingDelete ? (
+                  <div className="script-delete-confirm" role="alertdialog" aria-label="Confirmar borrado">
+                    <p>¿Borrar esta afirmación? No se puede deshacer.</p>
+                    <div className="script-delete-confirm-actions">
+                      <button type="button" onClick={() => setConfirmingDelete(false)}>
+                        Cancelar
+                      </button>
+                      <button type="button" className="script-delete-yes" onClick={handleDelete}>
+                        Sí, borrar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button type="button" className="script-delete-btn" onClick={() => setConfirmingDelete(true)}>
+                    <Trash2 size={15} strokeWidth={1.75} />
+                    Borrar afirmación
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
