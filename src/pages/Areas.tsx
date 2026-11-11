@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listDimensions, type Dimension } from '../lib/areas'
+import { getContrastTextColor } from '../lib/color'
 
 export default function Areas() {
   const [dimensions, setDimensions] = useState<Dimension[]>([])
@@ -26,18 +27,13 @@ export default function Areas() {
     }
   }, [])
 
-  if (loading) {
-    return (
-      <div className="page">
-        <h1>Áreas</h1>
-        <p>Cargando...</p>
-      </div>
-    )
-  }
-
   return (
-    <div className="page">
-      <h1>Áreas</h1>
+    <div className="page areas-page">
+      <div className="areas-header">
+        <h1>Mis áreas</h1>
+      </div>
+
+      {loading && <p>Cargando...</p>}
       {error && <p className="auth-error">{error}</p>}
 
       <div className="areas-grid">
@@ -46,7 +42,7 @@ export default function Areas() {
             key={dim.key}
             to={`/areas/${dim.key}`}
             className="area-card"
-            style={{ borderColor: dim.color_hex, ['--area-color' as string]: dim.color_hex }}
+            style={{ background: dim.color_hex, color: getContrastTextColor(dim.color_hex) }}
           >
             <span className="area-emoji">{dim.emoji}</span>
             <span className="area-label">{dim.label}</span>
