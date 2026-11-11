@@ -148,6 +148,26 @@ const GENERATE_TIMEOUT_MS = 60000
 /** Mismo tope que valida el servidor (api/generate-script.ts); los inputs de meta lo usan como maxLength. */
 export const MAX_GOAL_TEXT_LENGTH = 200
 
+/** Error del endpoint con su status y, si lo trae, `reason` (p. ej. 'minute_limit' / 'day_limit' en un 429). */
+export class GenerateScriptError extends Error {
+  status: number
+  reason: string | null
+
+  constructor(message: string, status: number, reason: string | null = null) {
+    super(message)
+    this.name = 'GenerateScriptError'
+    this.status = status
+    this.reason = reason
+  }
+}
+
+/** Solo se usa si el servidor no devolvió un mensaje (p. ej. un timeout de Vercel responde HTML, no JSON). */
+function fallbackErrorMessage(status: number): string {
+  if (status === 429) return 'Llegaste al límite de generaciones. Intenta más tarde.'
+  if (status === 408 || status === 504) return 'La generación está tardando demasiado. Intenta de nuevo.'
+  return 'No se pudo generar el guion'
+}
+
 const SESSION_EXPIRED_MESSAGE = 'Tu sesión expiró. Inicia sesión de nuevo para generar afirmaciones.'
 
 export async function generateAffirmationScript(
@@ -186,7 +206,10 @@ export async function generateAffirmationScript(
     const data = await response.json().catch(() => null)
 
     if (!response.ok) {
-      throw new Error(data?.error ?? 'No se pudo generar el guion')
+      // Siempre se muestra el mensaje que mandó el servidor (cuota, validación, sesión…) si existe.
+      const serverMessage = typeof data?.error === 'string' && data.error.trim() ? data.error : null
+      const reason = typeof data?.reason === 'string' ? data.reason : null
+      throw new GenerateScriptError(serverMessage ?? fallbackErrorMessage(response.status), response.status, reason)
     }
     if (!data?.title || !data?.script) {
       throw new Error('Respuesta inválida del servidor')

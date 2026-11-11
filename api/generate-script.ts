@@ -28,6 +28,16 @@ const MAX_TOKENS = 3000
 const ANTHROPIC_TIMEOUT_MS = 55_000
 const ANTHROPIC_MAX_RETRIES = 1
 
+// Cuota por usuario (la aplica la función SQL reserve_ai_generation, que usa auth.uid()).
+const QUOTA_PER_MINUTE = 3
+const QUOTA_PER_DAY = 20
+
+const QUOTA_MESSAGES: Record<string, string> = {
+  minute_limit: 'Vas muy rápido, espera un momento y vuelve a intentar.',
+  day_limit: 'Llegaste al límite de generaciones de hoy. Vuelve mañana.',
+}
+const QUOTA_FALLBACK_MESSAGE = 'Llegaste al límite de generaciones. Intenta más tarde.'
+
 // Topes de entrada: todo lo que llega del cliente termina dentro del prompt.
 const MAX_GOAL_TEXT_LENGTH = 200
 const MAX_DIMENSION_LABEL_LENGTH = 50
@@ -40,16 +50,27 @@ function getBearerToken(req: ApiRequest): string | null {
   return match ? match[1] : null
 }
 
-type AuthResult = { ok: true } | { ok: false; status: 401 | 503; error: string }
-
 /**
- * Valida el access_token contra Supabase (auth.getUser). Usa un cliente con la anon key, nunca service_role:
- * getUser(token) no necesita privilegios, solo que Supabase confirme que el token es válido y vigente.
+ * Cliente de Supabase con la anon key y el token del usuario en el header Authorization: PostgREST ejecuta las
+ * llamadas como ese usuario (auth.uid() y RLS funcionan). Nunca se usa service_role.
  */
-async function verifySession(token: string): Promise<AuthResult> {
-  const supabase = createClient(process.env.VITE_SUPABASE_URL!, process.env.VITE_SUPABASE_ANON_KEY!, {
+function createUserClient(token: string) {
+  return createClient(process.env.VITE_SUPABASE_URL!, process.env.VITE_SUPABASE_ANON_KEY!, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
     auth: { persistSession: false, autoRefreshToken: false },
   })
+}
+
+type UserClient = ReturnType<typeof createUserClient>
+
+type AuthResult = { ok: true; supabase: UserClient } | { ok: false; status: 401 | 503; error: string }
+
+/**
+ * Valida el access_token contra Supabase (auth.getUser): confirma que el token es válido y vigente. Si lo es,
+ * devuelve el cliente autenticado como ese usuario, que se reutiliza para la cuota.
+ */
+async function verifySession(token: string): Promise<AuthResult> {
+  const supabase = createUserClient(token)
 
   const { data, error } = await supabase.auth.getUser(token)
 
@@ -60,7 +81,73 @@ async function verifySession(token: string): Promise<AuthResult> {
     return { ok: false, status: 401, error: 'Sesión inválida o expirada' }
   }
 
-  return { ok: true }
+  return { ok: true, supabase }
+}
+
+type ReserveResult =
+  | { ok: true; id: string | number }
+  | { ok: false; status: 429 | 500; reason: string; error: string }
+
+/**
+ * Reserva un cupo de generación (rpc reserve_ai_generation). Falla cerrada: si no se puede confirmar el cupo,
+ * no se llama a Anthropic. La función puede devolver un objeto o una fila dentro de un arreglo.
+ */
+async function reserveGeneration(supabase: UserClient): Promise<ReserveResult> {
+  const { data, error } = await supabase.rpc('reserve_ai_generation', {
+    p_model: MODEL,
+    p_per_minute: QUOTA_PER_MINUTE,
+    p_per_day: QUOTA_PER_DAY,
+  })
+
+  const unavailable: ReserveResult = {
+    ok: false,
+    status: 500,
+    reason: 'quota_check_failed',
+    error: 'No se pudo verificar tu cupo de generaciones. Intenta de nuevo.',
+  }
+
+  if (error) {
+    console.error(`generate-script: reserve_ai_generation falló: ${error.message}`)
+    return unavailable
+  }
+
+  const row = (Array.isArray(data) ? data[0] : data) as { ok?: unknown; reason?: unknown; id?: unknown } | null
+  if (!row || typeof row.ok !== 'boolean') {
+    console.error('generate-script: reserve_ai_generation devolvió una respuesta inesperada:', JSON.stringify(data))
+    return unavailable
+  }
+
+  if (!row.ok) {
+    const reason = typeof row.reason === 'string' ? row.reason : 'quota_exceeded'
+    return { ok: false, status: 429, reason, error: QUOTA_MESSAGES[reason] ?? QUOTA_FALLBACK_MESSAGE }
+  }
+
+  if (typeof row.id !== 'string' && typeof row.id !== 'number') {
+    console.error('generate-script: reserve_ai_generation no devolvió el id de la reserva:', JSON.stringify(data))
+    return unavailable
+  }
+
+  return { ok: true, id: row.id }
+}
+
+/** Cierra la reserva (rpc finish_ai_generation). Un fallo aquí no debe romper la respuesta ya generada: solo se registra. */
+async function finishGeneration(
+  supabase: UserClient,
+  id: string | number,
+  status: 'ok' | 'error',
+  usage?: { input_tokens: number; output_tokens: number },
+) {
+  try {
+    const { error } = await supabase.rpc('finish_ai_generation', {
+      p_id: id,
+      p_status: status,
+      p_input_tokens: usage?.input_tokens ?? 0,
+      p_output_tokens: usage?.output_tokens ?? 0,
+    })
+    if (error) console.error(`generate-script: finish_ai_generation (${status}) falló: ${error.message}`)
+  } catch (err) {
+    console.error(`generate-script: finish_ai_generation (${status}) lanzó una excepción:`, err)
+  }
 }
 
 /** Reemplaza por espacios los saltos de línea, tabs y demás caracteres de control. */
@@ -169,33 +256,24 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return
   }
 
-  try {
-    const client = new Anthropic({ timeout: ANTHROPIC_TIMEOUT_MS, maxRetries: ANTHROPIC_MAX_RETRIES })
+  // 3) Cuota: se reserva un cupo ANTES de llamar a Anthropic (falla cerrada si no se puede confirmar).
+  const reservation = await reserveGeneration(auth.supabase)
+  if (!reservation.ok) {
+    res.status(reservation.status).json({ error: reservation.error, reason: reservation.reason })
+    return
+  }
 
-    const message = await client.messages.create({
+  // 4) Generación. Pase lo que pase, la reserva se cierra con el resultado y los tokens reales.
+  const client = new Anthropic({ timeout: ANTHROPIC_TIMEOUT_MS, maxRetries: ANTHROPIC_MAX_RETRIES })
+
+  let message: Anthropic.Message
+  try {
+    message = await client.messages.create({
       model: MODEL,
       max_tokens: MAX_TOKENS,
       // Sin `thinking`: claude-sonnet-5-5 no razona antes de responder y la API rechaza { type: 'disabled' }.
       messages: [{ role: 'user', content: buildPrompt(dimension.value, goal.value) }],
     })
-
-    const textBlock = message.content.find(
-      (block): block is Anthropic.TextBlock => block.type === 'text',
-    )
-
-    const parsed = textBlock ? extractJson(textBlock.text) : null
-
-    if (!parsed) {
-      // stop_reason 'max_tokens' = el modelo se quedó sin tokens y el JSON quedó cortado.
-      console.error(
-        `generate-script: respuesta no era el JSON esperado (stop_reason=${message.stop_reason}, output_tokens=${message.usage.output_tokens}, max_tokens=${MAX_TOKENS}):`,
-        textBlock?.text,
-      )
-      res.status(502).json({ error: 'El modelo no devolvió un formato válido' })
-      return
-    }
-
-    res.status(200).json(parsed)
   } catch (err) {
     // Una línea legible en los Runtime Logs (el plan Hobby solo guarda 30 min). Al cliente solo va el texto genérico.
     if (err instanceof Anthropic.APIError) {
@@ -203,6 +281,28 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     } else {
       console.error('generate-script error:', err)
     }
+    await finishGeneration(auth.supabase, reservation.id, 'error')
     res.status(500).json({ error: 'No se pudo generar el guion' })
+    return
   }
+
+  const textBlock = message.content.find(
+    (block): block is Anthropic.TextBlock => block.type === 'text',
+  )
+
+  const parsed = textBlock ? extractJson(textBlock.text) : null
+
+  if (!parsed) {
+    // stop_reason 'max_tokens' = el modelo se quedó sin tokens y el JSON quedó cortado.
+    console.error(
+      `generate-script: respuesta no era el JSON esperado (stop_reason=${message.stop_reason}, output_tokens=${message.usage.output_tokens}, max_tokens=${MAX_TOKENS}):`,
+      textBlock?.text,
+    )
+    await finishGeneration(auth.supabase, reservation.id, 'error', message.usage)
+    res.status(502).json({ error: 'El modelo no devolvió un formato válido' })
+    return
+  }
+
+  await finishGeneration(auth.supabase, reservation.id, 'ok', message.usage)
+  res.status(200).json(parsed)
 }
