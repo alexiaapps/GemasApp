@@ -7,3 +7,8 @@ export function getContrastTextColor(hex: string): string {
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
   return luminance > 0.6 ? '#1a1a1a' : '#ffffff'
 }
+
+/** Mezcla el color_hex con blanco para obtener su versión pastel (pct = % de color). */
+export function pastelOf(hex: string, pct = 28): string {
+  return `color-mix(in srgb, ${hex} ${pct}%, white)`
+}

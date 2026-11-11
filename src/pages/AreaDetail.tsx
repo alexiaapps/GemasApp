@@ -1,19 +1,11 @@
-import { ArrowLeft, Trash2 } from 'lucide-react'
-import { useEffect, useState, type FormEvent, type MouseEvent } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft, ChevronRight, Plus, X } from 'lucide-react'
+import { useEffect, useState, type FormEvent } from 'react'
+import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import AffirmationPlaylist from '../components/AffirmationPlaylist'
 import AreaResourcesSection from '../components/AreaResourcesSection'
-import {
-  completeGoal,
-  createGoal,
-  deleteGoal,
-  getDimension,
-  listGoalsByDimension,
-  type Dimension,
-  type Goal,
-} from '../lib/areas'
-import { getContrastTextColor } from '../lib/color'
+import { createGoal, getDimension, listGoalsByDimension, type Dimension, type Goal } from '../lib/areas'
+import { getContrastTextColor, pastelOf } from '../lib/color'
 
 const COMMON_GOAL_EMOJIS = [
   '🎯', '🚀', '💪', '📚', '💰', '❤️', '🧘', '🏃', '🎨', '🎵', '🌱', '🏆', '✈️', '🍎', '💡', '🔥', '⭐', '🎓',
@@ -22,7 +14,6 @@ const COMMON_GOAL_EMOJIS = [
 export default function AreaDetail() {
   const { key } = useParams<{ key: string }>()
   const { user } = useAuth()
-  const navigate = useNavigate()
 
   const [dimension, setDimension] = useState<Dimension | null>(null)
   const [goals, setGoals] = useState<Goal[]>([])
@@ -83,42 +74,6 @@ export default function AreaDetail() {
     }
   }
 
-  async function handleCompleteGoal(e: MouseEvent, goal: Goal) {
-    e.preventDefault()
-    e.stopPropagation()
-    try {
-      setGoals((prev) =>
-        prev.map((g) =>
-          g.id === goal.id ? { ...g, completed: true, completed_at: new Date().toISOString() } : g,
-        ),
-      )
-      await completeGoal(goal)
-    } catch (err) {
-      setError((err as Error).message)
-      setGoals((prev) =>
-        prev.map((g) => (g.id === goal.id ? { ...g, completed: false, completed_at: null } : g)),
-      )
-    }
-  }
-
-  async function handleDeleteGoal(e: MouseEvent, goal: Goal) {
-    e.preventDefault()
-    e.stopPropagation()
-    const base = '¿Seguro que quieres borrar esta meta y todas sus submetas?'
-    const message = goal.completed
-      ? `Esta meta ya fue completada y ya otorgó ${goal.gems_reward} gemas — esas gemas NO se te van a quitar al borrarla.\n\n${base}`
-      : base
-
-    if (!window.confirm(message)) return
-
-    try {
-      await deleteGoal(goal.id)
-      setGoals((prev) => prev.filter((g) => g.id !== goal.id))
-    } catch (err) {
-      setError((err as Error).message)
-    }
-  }
-
   if (loading) {
     return (
       <div className="page">
@@ -137,16 +92,26 @@ export default function AreaDetail() {
           <ArrowLeft size={18} strokeWidth={1.75} />
           Áreas
         </Link>
-        <h1 className="area-detail-title">
-          {dimension?.emoji} {dimension?.label ?? key}
-        </h1>
+        <div className="area-detail-heading">
+          <span className="area-detail-emoji">{dimension?.emoji}</span>
+          <h1 className="area-detail-title">{dimension?.label ?? key}</h1>
+        </div>
       </div>
 
       {error && <p className="auth-error">{error}</p>}
 
-      <button className="area-new-goal-btn" onClick={() => setShowNewGoalForm((v) => !v)}>
-        + Nueva meta grande
-      </button>
+      <div className="section-head">
+        <h2>Mis metas</h2>
+        <button
+          type="button"
+          className="round-add-btn"
+          onClick={() => setShowNewGoalForm((v) => !v)}
+          aria-label={showNewGoalForm ? 'Cerrar formulario' : 'Nueva meta grande'}
+          title={showNewGoalForm ? 'Cerrar' : 'Nueva meta grande'}
+        >
+          {showNewGoalForm ? <X size={18} strokeWidth={2.25} /> : <Plus size={18} strokeWidth={2.25} />}
+        </button>
+      </div>
 
       {showNewGoalForm && (
         <form className="area-form" onSubmit={handleCreateGoal}>
@@ -191,43 +156,21 @@ export default function AreaDetail() {
       )}
 
       <ul className="goal-list">
-        {goals.map((goal) => {
-          const cardText = textColor
-          return (
-            <li key={goal.id} className={`goal-item goal-item-colored${goal.completed ? ' completed' : ''}`}>
-              <div
-                className="goal-row"
-                style={{ background: dimColor, color: cardText, cursor: 'pointer' }}
-                onClick={() => navigate(`/areas/${key}/${goal.id}`)}
-                role="link"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') navigate(`/areas/${key}/${goal.id}`)
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={goal.completed}
-                  disabled={goal.completed}
-                  onClick={(e) => handleCompleteGoal(e, goal)}
-                  onChange={() => {}}
-                  style={{ accentColor: cardText }}
-                />
-                <span className="goal-emoji">{goal.icon_emoji || dimension?.emoji}</span>
-                <span className="goal-title">{goal.text}</span>
-                <button
-                  className="goal-delete-btn"
-                  onClick={(e) => handleDeleteGoal(e, goal)}
-                  title="Borrar meta"
-                  aria-label="Borrar meta"
-                  style={{ color: cardText }}
-                >
-                  <Trash2 size={15} strokeWidth={1.75} />
-                </button>
-              </div>
-            </li>
-          )
-        })}
+        {goals.map((goal) => (
+          <li key={goal.id}>
+            <Link
+              to={`/areas/${key}/${goal.id}`}
+              className={`goal-card${goal.completed ? ' completed' : ''}`}
+              style={{ ['--area-color' as string]: dimColor }}
+            >
+              <span className="goal-card-emoji" style={{ background: pastelOf(dimColor) }}>
+                {goal.icon_emoji || dimension?.emoji}
+              </span>
+              <span className="goal-card-title">{goal.text}</span>
+              <ChevronRight size={22} strokeWidth={2.25} className="goal-card-arrow" />
+            </Link>
+          </li>
+        ))}
         {goals.length === 0 && <li className="subgoal-empty">Sin metas todavía</li>}
       </ul>
 
@@ -235,7 +178,7 @@ export default function AreaDetail() {
         <AffirmationPlaylist
           userId={user.id}
           dimensionKey={key}
-          title="Mi Visión"
+          title="Mi visión"
           emptyMessage="Todavía no tienes afirmaciones en esta área"
         />
       )}
