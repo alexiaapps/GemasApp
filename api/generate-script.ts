@@ -172,7 +172,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     const message = await client.messages.create({
       model: MODEL,
       max_tokens: MAX_TOKENS,
-      thinking: { type: 'disabled' }, // tarea de escritura directa: no hace falta razonar, ahorra tokens
+      // Sin `thinking`: claude-sonnet-5-5 no razona antes de responder y la API rechaza { type: 'disabled' }.
       messages: [{ role: 'user', content: buildPrompt(dimension.value, goal.value) }],
     })
 
@@ -190,7 +190,12 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
     res.status(200).json(parsed)
   } catch (err) {
-    console.error('generate-script error:', err)
+    // Una línea legible en los Runtime Logs (el plan Hobby solo guarda 30 min). Al cliente solo va el texto genérico.
+    if (err instanceof Anthropic.APIError) {
+      console.error(`generate-script: Anthropic respondió ${err.status} (${err.type ?? 'sin tipo'}): ${err.message} [request_id=${err.requestID}]`)
+    } else {
+      console.error('generate-script error:', err)
+    }
     res.status(500).json({ error: 'No se pudo generar el guion' })
   }
 }
