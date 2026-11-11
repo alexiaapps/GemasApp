@@ -6,6 +6,7 @@ import AffirmationPlaylist from '../components/AffirmationPlaylist'
 import AreaResourcesSection from '../components/AreaResourcesSection'
 import { createGoal, getDimension, listGoalsByDimension, type Dimension, type Goal } from '../lib/areas'
 import { getContrastTextColor, pastelOf } from '../lib/color'
+import { MAX_GOAL_TEXT_LENGTH } from '../lib/scripts'
 
 const COMMON_GOAL_EMOJIS = [
   '🎯', '🚀', '💪', '📚', '💰', '❤️', '🧘', '🏃', '🎨', '🎵', '🌱', '🏆', '✈️', '🍎', '💡', '🔥', '⭐', '🎓',
@@ -117,7 +118,7 @@ export default function AreaDetail() {
         <form className="area-form" onSubmit={handleCreateGoal}>
           <label>
             Texto
-            <input name="text" type="text" required />
+            <input name="text" type="text" required maxLength={MAX_GOAL_TEXT_LENGTH} />
           </label>
           <label>
             Ícono
