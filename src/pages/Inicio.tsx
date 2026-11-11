@@ -1,3 +1,4 @@
+import ActiveProgramCard from '../components/ActiveProgramCard'
 import WeeklyGoalsSection from '../components/WeeklyGoalsSection'
 import DailyLogSection from '../components/DailyLogSection'
 
@@ -23,7 +24,7 @@ export default function Inicio() {
 
       <WeeklyGoalsSection />
 
-      <p>Aquí irá la tarjeta del programa activo.</p>
+      <ActiveProgramCard />
 
       <DailyLogSection />
     </div>

@@ -26,6 +26,19 @@
     #cdb4ec 100%
   );
 
+  /* Wordmark "Gemas": mismos matices que el arcoíris pastel pero saturados y oscuros
+     (cada tono y todo el degradado >= 3:1 sobre blanco, mínimo para texto grande) */
+  --gradient-wordmark: linear-gradient(
+    135deg,
+    #d6336c 0%,
+    #d9480f 20%,
+    #a87b00 38%,
+    #2f9e44 56%,
+    #0b8a8f 72%,
+    #1c6fd6 86%,
+    #7a3fd1 100%
+  );
+
   /* Degradado propio de la tarjeta de afirmaciones — fijo, no depende del tema */
   --gradient-affirmation-card: linear-gradient(
     135deg,
@@ -84,11 +97,11 @@ h4 {
   font-weight: 700;
 }
 
-/* Wordmark "gemas": degradado arcoíris aplicado al texto */
+/* Wordmark "Gemas": degradado (versión de alto contraste) aplicado al texto */
 .brand-wordmark {
   font-family: var(--font-display);
   font-weight: 700;
-  background: var(--gradient-rainbow);
+  background: var(--gradient-wordmark);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1507,6 +1520,151 @@ h4 {
 .sheet-danger {
   color: var(--danger);
   border-color: var(--danger) !important;
+}
+
+/* --- Lector del guion --- */
+.script-reader {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  max-height: min(80vh, calc(100dvh - 2rem));
+}
+
+/* Cabecera fija: la ✕ siempre se ve, aunque el guion sea largo */
+.script-reader-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.8rem 0.8rem 0.7rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.script-reader-head .sheet-legend {
+  margin: 0;
+  min-width: 0;
+}
+
+.script-reader-close {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  color: #111111;
+  border: 1.5px solid #111111;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.script-reader-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1rem 1.2rem 1.4rem;
+}
+
+.script-reader-body h3 {
+  margin-top: 0;
+}
+
+/* Borrar: zona aparte, con estilo secundario en rojo */
+.script-reader-danger {
+  margin-top: 1.4rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
+}
+
+.script-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: none;
+  border: none;
+  color: #c0262d;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+}
+
+.script-delete-btn:hover {
+  text-decoration: underline;
+}
+
+.script-delete-confirm {
+  width: 100%;
+  background: color-mix(in srgb, #c0262d 8%, var(--surface));
+  border: 1.5px solid #c0262d;
+  border-radius: 12px;
+  padding: 0.8rem 0.9rem;
+}
+
+.script-delete-confirm p {
+  margin: 0 0 0.7rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #8f1b21;
+}
+
+.script-delete-confirm-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.script-delete-confirm-actions button {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.55rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+.script-delete-confirm-actions .script-delete-yes {
+  background: #c0262d;
+  border-color: #c0262d;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* En pantallas anchas el lector es un diálogo centrado */
+@media (min-width: 600px) {
+  .script-reader-overlay {
+    align-items: center;
+  }
+
+  .script-reader-overlay .script-reader {
+    border-radius: 16px;
+  }
+}
+
+/* --- Inicio: tarjeta del programa activo --- */
+.active-program-card .program-card {
+  margin-top: 0.5rem;
+}
+
+.active-program-card .rest-timer-bar {
+  margin: 0.6rem 0 0.3rem;
+}
+
+.active-program-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
 }
 
 /* --- Teleprompter --- */
@@ -2975,6 +3133,7 @@ h4 {
   }
 
   .inicio-page:has(.weekly-gems-summary) > p,
+  .inicio-page:has(.weekly-gems-summary) > .active-program-card,
   .inicio-page:has(.weekly-gems-summary) > .daily-log-section {
     grid-column: 2;
   }
