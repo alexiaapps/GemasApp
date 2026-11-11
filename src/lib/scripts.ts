@@ -144,21 +144,43 @@ export async function uploadScriptCover(userId: string, script: AffirmationScrip
 
 const GENERATE_TIMEOUT_MS = 30000
 
+/** Mismo tope que valida el servidor (api/generate-script.ts); los inputs de meta lo usan como maxLength. */
+export const MAX_GOAL_TEXT_LENGTH = 200
+
+const SESSION_EXPIRED_MESSAGE = 'Tu sesión expiró. Inicia sesión de nuevo para generar afirmaciones.'
+
 export async function generateAffirmationScript(
   goalText: string,
   dimensionLabel: string,
   category: string | null,
 ): Promise<GeneratedScript> {
+  // El endpoint exige una sesión válida: se manda el access_token (getSession lo renueva si ya expiró).
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+  if (!session) {
+    throw new Error(SESSION_EXPIRED_MESSAGE)
+  }
+
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), GENERATE_TIMEOUT_MS)
 
   try {
     const response = await fetch('/api/generate-script', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
       body: JSON.stringify({ goalText, dimensionLabel, category }),
       signal: controller.signal,
     })
+
+    // El servidor rechazó la sesión: se cierra, y la app (sin sesión) vuelve sola a la pantalla de login.
+    if (response.status === 401) {
+      await supabase.auth.signOut()
+      throw new Error(SESSION_EXPIRED_MESSAGE)
+    }
 
     const data = await response.json().catch(() => null)
 

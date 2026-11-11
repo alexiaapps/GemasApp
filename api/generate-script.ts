@@ -1,8 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { createClient } from '@supabase/supabase-js'
 
 // Tipos mínimos compatibles con el runtime Node de Vercel, sin depender de @vercel/node.
 interface ApiRequest {
   method?: string
+  headers: Record<string, string | string[] | undefined>
   body: unknown
 }
 
@@ -16,6 +18,76 @@ interface GenerateScriptBody {
   goalText?: string
   // Aceptado por compatibilidad con el frontend; el prompt actual no tiene un lugar definido para insertarlo.
   category?: string | null
+}
+
+const MODEL = 'claude-sonnet-5-5'
+const MAX_TOKENS = 1200 // ~450 palabras en español son ~900 tokens, más la envoltura JSON
+const ANTHROPIC_TIMEOUT_MS = 25_000
+const ANTHROPIC_MAX_RETRIES = 1
+
+// Topes de entrada: todo lo que llega del cliente termina dentro del prompt.
+const MAX_GOAL_TEXT_LENGTH = 200
+const MAX_DIMENSION_LABEL_LENGTH = 50
+
+/** Token de `Authorization: Bearer <token>`, o null si el header falta o no tiene ese formato. */
+function getBearerToken(req: ApiRequest): string | null {
+  const header = req.headers?.authorization
+  const value = Array.isArray(header) ? header[0] : header
+  const match = typeof value === 'string' ? /^Bearer\s+(\S+)$/i.exec(value.trim()) : null
+  return match ? match[1] : null
+}
+
+type AuthResult = { ok: true } | { ok: false; status: 401 | 503; error: string }
+
+/**
+ * Valida el access_token contra Supabase (auth.getUser). Usa un cliente con la anon key, nunca service_role:
+ * getUser(token) no necesita privilegios, solo que Supabase confirme que el token es válido y vigente.
+ */
+async function verifySession(token: string): Promise<AuthResult> {
+  const supabase = createClient(process.env.VITE_SUPABASE_URL!, process.env.VITE_SUPABASE_ANON_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+
+  const { data, error } = await supabase.auth.getUser(token)
+
+  if (error || !data.user) {
+    // Supabase caído o inalcanzable: no es culpa del token, no se le dice al cliente que cierre sesión.
+    const unavailable = error?.name === 'AuthRetryableFetchError' || (error?.status ?? 0) >= 500
+    if (unavailable) return { ok: false, status: 503, error: 'No se pudo verificar la sesión. Intenta de nuevo.' }
+    return { ok: false, status: 401, error: 'Sesión inválida o expirada' }
+  }
+
+  return { ok: true }
+}
+
+/** Reemplaza por espacios los saltos de línea, tabs y demás caracteres de control. */
+function replaceControlChars(text: string): string {
+  let out = ''
+  for (const ch of text) {
+    const code = ch.codePointAt(0) ?? 0
+    out += code <= 0x1f || code === 0x7f || code === 0x2028 || code === 0x2029 ? ' ' : ch
+  }
+  return out
+}
+
+/** Texto de usuario → una sola línea sin comillas ni caracteres de control, seguro para ir entre comillas en el prompt. */
+function sanitizeForPrompt(text: string): string {
+  return replaceControlChars(text)
+    .replace(/["'`\u00ab\u00bb\u2018\u2019\u201a\u201b\u201c\u201d\u201e\u201f]/g, '') // comillas de todo tipo
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+type FieldResult = { ok: true; value: string } | { ok: false; error: string }
+
+function readTextField(raw: unknown, name: string, maxLength: number): FieldResult {
+  if (typeof raw !== 'string') return { ok: false, error: `${name} debe ser un texto` }
+  const trimmed = raw.trim()
+  if (!trimmed) return { ok: false, error: `${name} no puede estar vacío` }
+  if (trimmed.length > maxLength) return { ok: false, error: `${name} no puede superar ${maxLength} caracteres` }
+  const clean = sanitizeForPrompt(trimmed)
+  if (!clean) return { ok: false, error: `${name} no puede estar vacío` }
+  return { ok: true, value: clean }
 }
 
 function buildPrompt(dimensionLabel: string, goalText: string): string {
@@ -61,22 +133,47 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     res.status(500).json({ error: 'Falta configurar ANTHROPIC_API_KEY en el entorno del servidor' })
     return
   }
+  if (!process.env.VITE_SUPABASE_URL || !process.env.VITE_SUPABASE_ANON_KEY) {
+    res.status(500).json({ error: 'Falta configurar VITE_SUPABASE_URL y/o VITE_SUPABASE_ANON_KEY en el servidor' })
+    return
+  }
 
-  const { dimensionLabel, goalText } = (req.body ?? {}) as GenerateScriptBody
+  // 1) Sesión: se valida ANTES de leer el body y de cualquier llamada a Anthropic.
+  const token = getBearerToken(req)
+  if (!token) {
+    res.status(401).json({ error: 'Falta iniciar sesión' })
+    return
+  }
 
-  if (!dimensionLabel || !goalText) {
-    res.status(400).json({ error: 'Faltan dimensionLabel y/o goalText' })
+  const auth = await verifySession(token)
+  if (!auth.ok) {
+    res.status(auth.status).json({ error: auth.error })
+    return
+  }
+
+  // 2) Entrada: tipos, topes y limpieza del texto que va al prompt.
+  const body = typeof req.body === 'object' && req.body !== null ? (req.body as GenerateScriptBody) : {}
+
+  const goal = readTextField(body.goalText, 'goalText', MAX_GOAL_TEXT_LENGTH)
+  if (!goal.ok) {
+    res.status(400).json({ error: goal.error })
+    return
+  }
+
+  const dimension = readTextField(body.dimensionLabel, 'dimensionLabel', MAX_DIMENSION_LABEL_LENGTH)
+  if (!dimension.ok) {
+    res.status(400).json({ error: dimension.error })
     return
   }
 
   try {
-    const client = new Anthropic()
+    const client = new Anthropic({ timeout: ANTHROPIC_TIMEOUT_MS, maxRetries: ANTHROPIC_MAX_RETRIES })
 
     const message = await client.messages.create({
-      model: 'claude-sonnet-5',
-      max_tokens: 2048, // hasta ~450 palabras + envoltura JSON, con margen
+      model: MODEL,
+      max_tokens: MAX_TOKENS,
       thinking: { type: 'disabled' }, // tarea de escritura directa: no hace falta razonar, ahorra tokens
-      messages: [{ role: 'user', content: buildPrompt(dimensionLabel, goalText) }],
+      messages: [{ role: 'user', content: buildPrompt(dimension.value, goal.value) }],
     })
 
     const textBlock = message.content.find(

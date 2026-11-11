@@ -53,9 +53,15 @@ Para probar la instalación en el celular, necesitas servir la build por HTTPS (
 
 ## API de Anthropic (generación de guiones con IA)
 
-La API key de Anthropic es un secreto de servidor — **nunca** lleva el prefijo `VITE_` (esas sí se empaquetan en el JS que descarga el navegador). Vive solo en `process.env.ANTHROPIC_API_KEY`, leída exclusivamente desde funciones serverless en `api/` (ej. `api/generate-script.ts`). El frontend nunca la ve; solo hace `fetch('/api/generate-script', { method: 'POST', body: ... })`.
+La API key de Anthropic es un secreto de servidor — **nunca** lleva el prefijo `VITE_` (esas sí se empaquetan en el JS que descarga el navegador). Vive solo en `process.env.ANTHROPIC_API_KEY`, leída exclusivamente desde funciones serverless en `api/` (ej. `api/generate-script.ts`). El frontend nunca la ve; solo hace `fetch('/api/generate-script', { method: 'POST', headers: { Authorization: 'Bearer <access_token>' }, body: ... })`.
 
-**Variable de entorno:** `ANTHROPIC_API_KEY`
+**Seguridad del endpoint (`api/generate-script.ts`):**
+- Exige una sesión válida de Supabase: lee `Authorization: Bearer <access_token>`, lo valida con `auth.getUser(token)` (cliente con la anon key, nunca `service_role`) y responde **401** si falta o es inválido. Esto ocurre antes de llamar a Anthropic. Si Supabase no responde, devuelve **503**.
+- Valida la entrada antes de llamar a Anthropic: `goalText` y `dimensionLabel` deben ser texto, con tope de 200 y 50 caracteres (**400** si no cumplen). Se quitan saltos de línea y comillas antes de ponerlos en el prompt.
+- Modelo `claude-sonnet-5-5`, `max_tokens` 1200, con `timeout` y `maxRetries` en el cliente de Anthropic.
+- La función lee `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` del entorno del servidor, así que deben estar habilitadas en los mismos entornos de Vercel donde uses `/api` (Production y Preview).
+
+**Variables de entorno de la función:** `ANTHROPIC_API_KEY`, `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`
 
 **En desarrollo:** agrégala a tu `.env.local` (sin prefijo `VITE_`, ver arriba). Como `npm run dev` (Vite) no ejecuta las funciones de `/api`, para probarlas en local necesitas la CLI de Vercel, que sí simula el entorno serverless completo:
 
