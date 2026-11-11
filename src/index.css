@@ -164,15 +164,31 @@ h4 {
 
 .inicio-header {
   background: #fdf1e7;
-  margin: -1.2rem -1.2rem 1.2rem;
-  padding: 1.4rem 1.2rem 1.2rem;
+  margin: -1.2rem -1.2rem 1.4rem;
+  padding: 1.5rem 1.2rem 1.3rem;
 }
 
 .inicio-header h1 {
   margin: 0;
-  font-size: 1.8rem;
+  font-size: 2.3rem;
   font-weight: 800;
-  color: #1a1a1a;
+  line-height: 1.05;
+  color: #111111;
+}
+
+.inicio-header-subtitle {
+  margin: 0.3rem 0 0;
+  font-weight: 600;
+  color: #4a4550;
+}
+
+.inicio-header-date {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
 }
 
 /* --- Weekly goals --- */
@@ -181,45 +197,62 @@ h4 {
 }
 
 .weekly-gems-summary {
-  background: var(--surface);
+  background: #ffffff;
   border: 3px solid #111111;
-  border-radius: 22px;
-  padding: 1rem 1.1rem;
-  margin-bottom: 1rem;
+  border-radius: 24px;
+  box-shadow: 4px 5px 0 #111111;
+  padding: 1.1rem 1.2rem 1rem;
+  margin-bottom: 1.4rem;
 }
 
 .weekly-gems-title {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-weight: 700;
-  margin: 0 0 0.9rem;
+  margin: 0 0 1rem;
 }
 
-.weekly-gems-title span {
+.weekly-gems-label {
   font-weight: 800;
-  font-size: 1.3rem;
+  font-size: 0.95rem;
+  color: #111111;
+}
+
+.weekly-gems-count {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--text-dim);
+}
+
+.weekly-gems-count b {
+  font-size: 1.9rem;
+  font-weight: 800;
   color: #8b5cf6;
 }
 
 .weekly-gems-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.9rem;
+  display: grid;
+  gap: 0.4rem;
+  align-items: start;
 }
 
 .weekly-gem-icon {
-  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.2rem;
-  flex: 0 0 auto;
+  gap: 0.25rem;
+}
+
+.weekly-gem-shape {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .weekly-gem-icon-svg {
-  color: #b6b6b6;
-  fill: none;
+  color: #b8b8b8;
+  fill: #ececec;
   transition: color 0.3s ease, fill 0.3s ease;
 }
 
@@ -239,6 +272,19 @@ h4 {
   }
 }
 
+.weekly-gem-lock {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -40%);
+  color: #8e8e8e;
+  transition: opacity 0.25s ease;
+}
+
+.weekly-gem-icon.achieved .weekly-gem-lock {
+  opacity: 0;
+}
+
 .weekly-gem-check {
   color: #1f9d55;
   opacity: 0;
@@ -254,24 +300,54 @@ h4 {
 .weekly-card-stack {
   display: flex;
   flex-direction: column;
+  gap: 0.95rem;
+  margin: 0.9rem 0;
+}
+
+.weekly-row {
+  display: flex;
+  align-items: center;
   gap: 0.6rem;
-  margin: 0.8rem 0;
+}
+
+.weekly-index {
+  flex: 0 0 1.5rem;
+  text-align: center;
+  font-weight: 800;
+  font-size: 1.4rem;
+  color: #9a96a3;
 }
 
 .weekly-card {
+  position: relative;
+  overflow: hidden;
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: 0.7rem;
+  gap: 0.5rem;
   background: color-mix(in srgb, var(--dim-color, var(--accent)) 28%, white);
   border: 3px solid #111111;
-  border-radius: 22px;
-  padding: 0.9rem 1.1rem;
+  border-radius: 20px;
+  box-shadow: 4px 5px 0 #111111;
+  padding: 0.8rem 0.8rem 0.8rem 1.35rem;
+}
+
+/* Franja de color sólido en el borde izquierdo (dentro del borde negro) */
+.weekly-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0.65rem;
+  background: var(--dim-color, var(--accent));
 }
 
 .weekly-check-circle {
   flex: 0 0 auto;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   border: 2.5px solid var(--dim-color, var(--accent));
   background: transparent;
@@ -292,16 +368,18 @@ h4 {
 }
 
 .weekly-card-text-col {
-  flex: 1;
+  flex: 1 1 4rem;
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.2rem;
   min-width: 0;
 }
 
 .weekly-card-text {
-  font-weight: 700;
-  color: var(--text);
+  font-weight: 800;
+  font-size: 1rem;
+  line-height: 1.15;
+  color: #111111;
 }
 
 .weekly-card.completed .weekly-card-text {
@@ -309,38 +387,57 @@ h4 {
 }
 
 .weekly-card-dimension {
-  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.06em;
   color: var(--text-dim);
 }
 
-.weekly-card.habit {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.7rem;
+.weekly-card-dimension .weekly-delete-btn {
+  padding: 0;
+  opacity: 0.55;
 }
 
-.weekly-habit-header {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.weekly-habit-count {
+.weekly-count-oval {
   flex: 0 0 auto;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 800;
-  color: var(--text);
-  background: var(--surface);
+  color: color-mix(in srgb, var(--dim-color, var(--accent)) 85%, black);
+  background: #ffffff;
   border: 2px solid var(--dim-color, var(--accent));
   border-radius: 999px;
-  padding: 0.15rem 0.6rem;
+  padding: 0.1rem 0.5rem;
 }
 
 .habit-dots-row {
   display: flex;
   gap: 0.4rem;
+}
+
+/* Dentro de la tarjeta semanal: círculos pequeños en la misma fila que el óvalo */
+.weekly-card .habit-dots-row {
+  flex: 0 0 auto;
+  gap: 3px;
+}
+
+.weekly-card .habit-dot {
+  width: 19px;
+  height: 19px;
+  font-size: 0.5rem;
+  border: 2px solid #111111;
+  background: #ffffff;
+  color: #111111;
+}
+
+.weekly-card .habit-dot.checked {
+  color: #ffffff;
+}
+
+.weekly-card .habit-dot-today {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--dim-color, var(--accent)) 55%, white);
 }
 
 .habit-dot {
