@@ -1,4 +1,4 @@
-import { Check, Gem, Trash2 } from 'lucide-react'
+import { Check, Gem, Lock, Trash2 } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
 import HabitDotsRow from './HabitDotsRow'
@@ -228,22 +228,31 @@ export default function WeeklyGoalsSection() {
       {weeklyList.length > 0 && (
         <div className="weekly-gems-summary">
           <p className="weekly-gems-title">
-            Metas logradas esta semana <span>{achievedCount}/{weeklyList.length}</span>
+            <span className="weekly-gems-label">Metas logradas esta semana</span>
+            <span className="weekly-gems-count">
+              <b>{achievedCount}</b> /{weeklyList.length}
+            </span>
           </p>
-          <div className="weekly-gems-row">
+          <div
+            className="weekly-gems-row"
+            style={{ gridTemplateColumns: `repeat(${weeklyList.length}, 1fr)` }}
+          >
             {weeklyList.map((item) => {
               const color = item.goal.dimension?.color_hex ?? '#6ee7b7'
               const achieved = isAchievedThisWeek(item, checkinsBySubgoal)
               return (
-                <div key={item.id} className="weekly-gem-icon">
-                  <Gem
-                    size={26}
-                    strokeWidth={1.5}
-                    className={`weekly-gem-icon-svg${achieved ? ' achieved' : ''}`}
-                    style={achieved ? { color, fill: color } : undefined}
-                  />
+                <div key={item.id} className={`weekly-gem-icon${achieved ? ' achieved' : ''}`}>
+                  <div className="weekly-gem-shape">
+                    <Gem
+                      size={36}
+                      strokeWidth={1.5}
+                      className={`weekly-gem-icon-svg${achieved ? ' achieved' : ''}`}
+                      style={achieved ? { color, fill: color } : undefined}
+                    />
+                    <Lock size={13} strokeWidth={2.25} className="weekly-gem-lock" />
+                  </div>
                   <Check
-                    size={11}
+                    size={13}
                     strokeWidth={3}
                     className={`weekly-gem-check${achieved ? ' visible' : ''}`}
                   />
@@ -261,78 +270,78 @@ export default function WeeklyGoalsSection() {
       {error && <p className="auth-error">{error}</p>}
 
       <div className="weekly-card-stack">
-        {weeklyList.map((item) => {
+        {weeklyList.map((item, index) => {
           const color = item.goal.dimension?.color_hex ?? '#6ee7b7'
-
           const dimensionLabel = (item.goal.dimension?.label ?? item.goal.dimension_key).toUpperCase()
+
+          const deleteButton = (
+            <button
+              type="button"
+              className="weekly-delete-btn"
+              onClick={() => handleDeleteWeekly(item)}
+              title="Borrar submeta"
+              aria-label="Borrar submeta"
+            >
+              <Trash2 size={12} strokeWidth={1.75} />
+            </button>
+          )
 
           if (item.goal_kind === 'habit') {
             const checkins = checkinsBySubgoal.get(item.id) ?? new Set<string>()
             const target = item.target_days_per_week ?? 7
             const metThisWeek = checkins.size >= target
             return (
-              <div
-                key={item.id}
-                className={`weekly-card habit${metThisWeek ? ' completed' : ''}`}
-                style={{ ['--dim-color' as string]: color }}
-              >
-                <div className="weekly-habit-header">
+              <div key={item.id} className="weekly-row">
+                <span className="weekly-index">{index + 1}</span>
+                <div
+                  className={`weekly-card habit${metThisWeek ? ' completed' : ''}`}
+                  style={{ ['--dim-color' as string]: color }}
+                >
                   <div className="weekly-card-text-col">
                     <span className="weekly-card-text">{item.text}</span>
-                    <span className="weekly-card-dimension">{dimensionLabel}</span>
+                    <span className="weekly-card-dimension">
+                      {dimensionLabel}
+                      {deleteButton}
+                    </span>
                   </div>
-                  <button
-                    type="button"
-                    className="weekly-delete-btn"
-                    onClick={() => handleDeleteWeekly(item)}
-                    title="Borrar submeta"
-                    aria-label="Borrar submeta"
-                  >
-                    <Trash2 size={15} strokeWidth={1.75} />
-                  </button>
-                  <span className="weekly-habit-count">
+                  <span className="weekly-count-oval">
                     {checkins.size}/{target}
                   </span>
+                  <HabitDotsRow
+                    checkinDates={checkins}
+                    dimensionColor={color}
+                    onToggleToday={() => handleToggleHabitToday(item)}
+                    toggling={togglingHabitId === item.id}
+                  />
                 </div>
-                <HabitDotsRow
-                  checkinDates={checkins}
-                  dimensionColor={color}
-                  onToggleToday={() => handleToggleHabitToday(item)}
-                  toggling={togglingHabitId === item.id}
-                />
               </div>
             )
           }
 
           return (
-            <div
-              key={item.id}
-              className={`weekly-card${item.completed ? ' completed' : ''}`}
-              style={{ ['--dim-color' as string]: color }}
-            >
-              <div className="weekly-card-text-col">
-                <span className="weekly-card-text">{item.text}</span>
-                <span className="weekly-card-dimension">{dimensionLabel}</span>
-              </div>
-              {!item.completed && (
+            <div key={item.id} className="weekly-row">
+              <span className="weekly-index">{index + 1}</span>
+              <div
+                className={`weekly-card${item.completed ? ' completed' : ''}`}
+                style={{ ['--dim-color' as string]: color }}
+              >
+                <div className="weekly-card-text-col">
+                  <span className="weekly-card-text">{item.text}</span>
+                  <span className="weekly-card-dimension">
+                    {dimensionLabel}
+                    {!item.completed && deleteButton}
+                  </span>
+                </div>
+                <span className="weekly-count-oval">{item.completed ? 1 : 0}/1</span>
                 <button
                   type="button"
-                  className="weekly-delete-btn"
-                  onClick={() => handleDeleteWeekly(item)}
-                  title="Borrar submeta"
-                  aria-label="Borrar submeta"
+                  className="weekly-check-circle"
+                  onClick={() => handleToggle(item)}
+                  aria-label={item.completed ? 'Marcar como pendiente' : 'Marcar como completada'}
                 >
-                  <Trash2 size={15} strokeWidth={1.75} />
+                  {item.completed && <Check size={16} strokeWidth={2.5} />}
                 </button>
-              )}
-              <button
-                type="button"
-                className="weekly-check-circle"
-                onClick={() => handleToggle(item)}
-                aria-label={item.completed ? 'Marcar como pendiente' : 'Marcar como completada'}
-              >
-                {item.completed && <Check size={16} strokeWidth={2.5} />}
-              </button>
+              </div>
             </div>
           )
         })}
