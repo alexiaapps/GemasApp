@@ -74,6 +74,20 @@ La primera vez te pedirá loguearte (`vercel login`) y vincular el proyecto (`ve
 
 **En Vercel (producción):** Project Settings → **Environment Variables** → agrega `ANTHROPIC_API_KEY` con tu key real, marcada para los entornos que quieras (Production / Preview / Development). Después de guardarla hay que volver a desplegar (redeploy) para que la función serverless la recoja.
 
+## Demo pública ("Probar demo")
+
+El login tiene un botón **Probar demo** que entra a una cuenta de ejemplo sin registrarse. Piezas:
+
+- **`src/lib/demo.ts`**: constante `DEMO_EMAIL = 'demo@example.com'` y `isDemoEmail()`. Es un archivo compartido que importan el frontend y las funciones de `api/`, por eso no importa nada más. Las funciones de `api/` lo importan **con extensión `.js`** (`'../src/lib/demo.js'`): sin ella, el JS compilado por Vercel falla en producción con `ERR_MODULE_NOT_FOUND`.
+- **Variable de entorno `DEMO_PASSWORD`** (solo servidor, **sin prefijo `VITE_`**; en Vercel, Production y Preview): la contraseña de la cuenta demo. Nunca llega al navegador: solo la lee `api/demo-login.ts`, que no la devuelve ni la registra. Si no está definida, el endpoint responde 503 y el botón no aparece.
+- **`api/demo-login.ts`**: `GET` dice si la demo está disponible (200/503, sin tocar la contraseña); `POST` inicia sesión con la anon key (nunca `service_role`) y devuelve solo `{ access_token, refresh_token }`. **Límite contra abuso:** 10 llamadas por minuto por IP, en memoria de la instancia (ventana fija; Vercel sobrescribe `x-forwarded-for`, así que la IP no se puede falsear). En serverless cada instancia tiene su propia memoria, así que es un límite de mejor esfuerzo; si hiciera falta uno global, se puede añadir una regla de rate limiting en Vercel (Firewall).
+- **Flujo del botón:** `/api/demo-login` → `supabase.auth.setSession` → `rpc('reset_demo_data')` → entrar. Mientras dura, la app sigue mostrando el login ("Preparando la demo..."): no se entra a medias. Si algo falla, se cierra la sesión y se muestra un mensaje.
+- **Cierre de sesión local:** la cuenta demo es compartida, así que `Salir` y los fallos de la demo usan `signOut({ scope: 'local' })`; el cierre global (el predeterminado) revocaría la sesión de los demás visitantes.
+- **Banner:** con la sesión demo se muestra "Modo demo: los cambios se reinician en cada entrada."
+- **IA en la demo:** `api/generate-script.ts` limita la cuenta demo a **1 generación por minuto y 3 por día, compartidas entre todos los visitantes**, y responde 429 con "La demo llegó a su límite de generaciones de hoy. Crea tu cuenta o vuelve mañana." Los demás usuarios siguen con 3 por minuto y 20 por día.
+
+El usuario demo y la función `reset_demo_data` viven en Supabase (la función solo funciona si la llama ese usuario).
+
 ## Deploy en Vercel
 
 1. Sube el repo a GitHub.

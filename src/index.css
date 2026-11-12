@@ -3788,3 +3788,59 @@ h4 {
     max-width: 760px;
   }
 }
+
+/* =====================================================================
+   DEMO: botón "Probar demo" en el login y banner de modo demo
+   ===================================================================== */
+.auth-demo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.auth-demo-btn {
+  width: 100%;
+  padding: 0.65rem;
+  background: #ffffff;
+  color: #111111;
+  border: 2.5px solid #111111;
+  border-radius: 14px;
+  box-shadow: 3px 4px 0 #111111;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.auth-demo-btn:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+.auth-demo-hint {
+  margin: 0.2rem 0 0;
+  text-align: center;
+  font-size: 0.78rem;
+  line-height: 1.3;
+  color: var(--text-dim);
+}
+
+/* Franja sobre el header: discreta, de una línea, sin tapar la navegación (no es fija) */
+.demo-banner {
+  padding: 0.3rem 1rem;
+  text-align: center;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #111111;
+  background: #fdf1e7;
+  border-bottom: 2px solid #111111;
+}
+
+@media (min-width: 1024px) {
+  /* El bloque banner + header ocupa toda la fila superior de la cuadrícula del shell */
+  .app-top {
+    grid-column: 1 / -1;
+  }
+}

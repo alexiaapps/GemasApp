@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
+import { isDemoEmail } from '../src/lib/demo.js'
 
 // Tipos mínimos compatibles con el runtime Node de Vercel, sin depender de @vercel/node.
 interface ApiRequest {
@@ -31,12 +32,16 @@ const ANTHROPIC_MAX_RETRIES = 1
 // Cuota por usuario (la aplica la función SQL reserve_ai_generation, que usa auth.uid()).
 const QUOTA_PER_MINUTE = 3
 const QUOTA_PER_DAY = 20
+// La cuenta de demo es una sola para todos los visitantes, así que este límite es COMPARTIDO entre todos ellos.
+const DEMO_QUOTA_PER_MINUTE = 1
+const DEMO_QUOTA_PER_DAY = 3
 
 const QUOTA_MESSAGES: Record<string, string> = {
   minute_limit: 'Vas muy rápido, espera un momento y vuelve a intentar.',
   day_limit: 'Llegaste al límite de generaciones de hoy. Vuelve mañana.',
 }
 const QUOTA_FALLBACK_MESSAGE = 'Llegaste al límite de generaciones. Intenta más tarde.'
+const DEMO_DAY_LIMIT_MESSAGE = 'La demo llegó a su límite de generaciones de hoy. Crea tu cuenta o vuelve mañana.'
 
 // Topes de entrada: todo lo que llega del cliente termina dentro del prompt.
 const MAX_GOAL_TEXT_LENGTH = 200
@@ -63,7 +68,7 @@ function createUserClient(token: string) {
 
 type UserClient = ReturnType<typeof createUserClient>
 
-type AuthResult = { ok: true; supabase: UserClient } | { ok: false; status: 401 | 503; error: string }
+type AuthResult = { ok: true; supabase: UserClient; email: string | null } | { ok: false; status: 401 | 503; error: string }
 
 /**
  * Valida el access_token contra Supabase (auth.getUser): confirma que el token es válido y vigente. Si lo es,
@@ -81,7 +86,7 @@ async function verifySession(token: string): Promise<AuthResult> {
     return { ok: false, status: 401, error: 'Sesión inválida o expirada' }
   }
 
-  return { ok: true, supabase }
+  return { ok: true, supabase, email: data.user.email ?? null }
 }
 
 type ReserveResult =
@@ -92,11 +97,11 @@ type ReserveResult =
  * Reserva un cupo de generación (rpc reserve_ai_generation). Falla cerrada: si no se puede confirmar el cupo,
  * no se llama a Anthropic. La función puede devolver un objeto o una fila dentro de un arreglo.
  */
-async function reserveGeneration(supabase: UserClient): Promise<ReserveResult> {
+async function reserveGeneration(supabase: UserClient, isDemo: boolean): Promise<ReserveResult> {
   const { data, error } = await supabase.rpc('reserve_ai_generation', {
     p_model: MODEL,
-    p_per_minute: QUOTA_PER_MINUTE,
-    p_per_day: QUOTA_PER_DAY,
+    p_per_minute: isDemo ? DEMO_QUOTA_PER_MINUTE : QUOTA_PER_MINUTE,
+    p_per_day: isDemo ? DEMO_QUOTA_PER_DAY : QUOTA_PER_DAY,
   })
 
   const unavailable: ReserveResult = {
@@ -119,7 +124,8 @@ async function reserveGeneration(supabase: UserClient): Promise<ReserveResult> {
 
   if (!row.ok) {
     const reason = typeof row.reason === 'string' ? row.reason : 'quota_exceeded'
-    return { ok: false, status: 429, reason, error: QUOTA_MESSAGES[reason] ?? QUOTA_FALLBACK_MESSAGE }
+    const error = isDemo && reason === 'day_limit' ? DEMO_DAY_LIMIT_MESSAGE : (QUOTA_MESSAGES[reason] ?? QUOTA_FALLBACK_MESSAGE)
+    return { ok: false, status: 429, reason, error }
   }
 
   if (typeof row.id !== 'string' && typeof row.id !== 'number') {
@@ -257,7 +263,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   // 3) Cuota: se reserva un cupo ANTES de llamar a Anthropic (falla cerrada si no se puede confirmar).
-  const reservation = await reserveGeneration(auth.supabase)
+  const reservation = await reserveGeneration(auth.supabase, isDemoEmail(auth.email))
   if (!reservation.ok) {
     res.status(reservation.status).json({ error: reservation.error, reason: reservation.reason })
     return

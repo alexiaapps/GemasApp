@@ -199,7 +199,8 @@ export async function generateAffirmationScript(
 
     // El servidor rechazó la sesión: se cierra, y la app (sin sesión) vuelve sola a la pantalla de login.
     if (response.status === 401) {
-      await supabase.auth.signOut()
+      // scope 'local': basta con salir de este navegador, y en la cuenta demo (compartida) evita cerrar la sesión de otros.
+      await supabase.auth.signOut({ scope: 'local' })
       throw new Error(SESSION_EXPIRED_MESSAGE)
     }
 
