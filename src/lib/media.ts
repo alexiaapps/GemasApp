@@ -26,6 +26,13 @@ export interface AffirmationMedia {
 }
 
 export const BUCKET = 'affirmations'
+
+/** Prefijo de las portadas incluidas en la app (public/demo/): se usan tal cual como URL pública, sin pasar por el Storage. */
+export const BUNDLED_COVER_PREFIX = '/demo/'
+
+export function isBundledCover(path: string | null | undefined): boolean {
+  return typeof path === 'string' && path.startsWith(BUNDLED_COVER_PREFIX)
+}
 const SIGNED_URL_EXPIRES_IN = 60 * 60 // 1 hora
 
 export async function getAffirmationArea(userId: string, dimensionKey: string) {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type TouchEvent } from 'react'
 import AffirmationCard from './AffirmationCard'
-import { getSignedUrls } from '../lib/media'
+import { getSignedUrls, isBundledCover } from '../lib/media'
 import {
   listAllScriptsForUser,
   listScriptsForDimension,
@@ -71,10 +71,14 @@ export default function AffirmationPlaylist({
 
   const activeScript = scripts[activeIndex] as AffirmationScriptWithGoal | undefined
 
-  // Portada de la tarjeta visible: se pide fresca cada vez que cambia.
+  // Portada de la tarjeta visible. Si es una imagen incluida en la app ("/demo/...") se usa tal cual como URL pública;
+  // las rutas del Storage se piden fresca (signed URL) cada vez que cambian.
+  const coverPath = activeScript?.cover_image_path
+  const bundledCoverUrl = coverPath && isBundledCover(coverPath) ? coverPath : undefined
+
   useEffect(() => {
     const path = activeScript?.cover_image_path
-    if (!path) {
+    if (!path || isBundledCover(path)) {
       setCoverUrl(undefined)
       return
     }
@@ -252,7 +256,7 @@ export default function AffirmationPlaylist({
             key={activeScript.id}
             userId={userId}
             script={activeScript}
-            coverUrl={coverUrl}
+            coverUrl={bundledCoverUrl ?? coverUrl}
             isPlaying={playingScriptId === activeScript.id && !isPaused}
             isCurrent={playingScriptId === activeScript.id}
             currentTime={currentTime}
