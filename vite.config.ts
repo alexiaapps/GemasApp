@@ -39,6 +39,9 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // Abrir /demo/*.svg o /api/* directamente en una pestaña no debe devolver el index.html del SPA.
+        // (Las imágenes y los fetch nunca pasan por este fallback; solo las navegaciones.)
+        navigateFallbackDenylist: [/^\/api\//, /^\/demo\//],
       },
     }),
   ],

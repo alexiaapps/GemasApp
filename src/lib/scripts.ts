@@ -18,7 +18,7 @@ export interface AffirmationScriptGoal {
   id: string
   text: string
   dimension_key: string
-  dimension: { label: string; emoji: string } | null
+  dimension: { label: string; emoji: string; color_hex: string } | null
 }
 
 export interface AffirmationScriptWithGoal extends AffirmationScript {
@@ -32,13 +32,13 @@ export interface GeneratedScript {
 
 const SCRIPT_WITH_GOAL_SELECT = `
   *,
-  goal:goals ( id, text, dimension_key, dimension:dimensions ( label, emoji ) )
+  goal:goals ( id, text, dimension_key, dimension:dimensions ( label, emoji, color_hex ) )
 `
 
 // Variante con !inner: necesaria para poder filtrar por una columna del recurso embebido (goal.dimension_key).
 const SCRIPT_WITH_GOAL_INNER_SELECT = `
   *,
-  goal:goals!inner ( id, text, dimension_key, dimension:dimensions ( label, emoji ) )
+  goal:goals!inner ( id, text, dimension_key, dimension:dimensions ( label, emoji, color_hex ) )
 `
 
 export async function listAllScriptsForUser(userId: string) {

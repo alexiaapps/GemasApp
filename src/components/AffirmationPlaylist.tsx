@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type TouchEvent } from 'react'
 import AffirmationCard from './AffirmationCard'
-import { getSignedUrls, isBundledCover } from '../lib/media'
+import { getSignedUrls } from '../lib/media'
+import { useCoverUrl } from '../lib/useCoverUrl'
 import {
   listAllScriptsForUser,
   listScriptsForDimension,
@@ -32,7 +33,6 @@ export default function AffirmationPlaylist({
   const [error, setError] = useState<string | null>(null)
 
   const [activeIndex, setActiveIndex] = useState(0)
-  const [coverUrl, setCoverUrl] = useState<string | undefined>(undefined)
   const touchStartX = useRef<number | null>(null)
 
   // --- Reproductor único para este carrusel ---
@@ -71,27 +71,9 @@ export default function AffirmationPlaylist({
 
   const activeScript = scripts[activeIndex] as AffirmationScriptWithGoal | undefined
 
-  // Portada de la tarjeta visible. Si es una imagen incluida en la app ("/demo/...") se usa tal cual como URL pública;
-  // las rutas del Storage se piden fresca (signed URL) cada vez que cambian.
-  const coverPath = activeScript?.cover_image_path
-  const bundledCoverUrl = coverPath && isBundledCover(coverPath) ? coverPath : undefined
-
-  useEffect(() => {
-    const path = activeScript?.cover_image_path
-    if (!path || isBundledCover(path)) {
-      setCoverUrl(undefined)
-      return
-    }
-    let cancelled = false
-    getSignedUrls([path])
-      .then((map) => {
-        if (!cancelled) setCoverUrl(map.get(path))
-      })
-      .catch((e) => setError((e as Error).message))
-    return () => {
-      cancelled = true
-    }
-  }, [activeScript?.cover_image_path])
+  // Portada de la tarjeta visible. useCoverUrl la resuelve igual para todos los casos:
+  // "/demo/..." (incluida en la app) tal cual, y las rutas del Storage con una signed URL fresca.
+  const cover = useCoverUrl(activeScript?.cover_image_path)
 
   function handleCoverUploaded(scriptId: string, path: string) {
     setScripts((prev) => prev.map((s) => (s.id === scriptId ? { ...s, cover_image_path: path } : s)))
@@ -256,7 +238,8 @@ export default function AffirmationPlaylist({
             key={activeScript.id}
             userId={userId}
             script={activeScript}
-            coverUrl={bundledCoverUrl ?? coverUrl}
+            coverUrl={cover.url}
+            coverStatus={cover.status}
             isPlaying={playingScriptId === activeScript.id && !isPaused}
             isCurrent={playingScriptId === activeScript.id}
             currentTime={currentTime}
