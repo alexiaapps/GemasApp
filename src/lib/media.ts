@@ -89,6 +89,19 @@ export async function getSignedUrls(paths: string[]) {
   return map
 }
 
+/**
+ * ÚNICA función que convierte un `cover_image_path` en una URL para el <img>:
+ * - "/demo/..." (imagen incluida en la app) → se usa tal cual, sin tocar el Storage;
+ * - cualquier otra ruta → signed URL del Storage.
+ * Devuelve undefined si no hay portada o no se pudo resolver.
+ */
+export async function resolveCoverUrl(path: string | null | undefined): Promise<string | undefined> {
+  if (!path) return undefined
+  if (isBundledCover(path)) return path
+  const map = await getSignedUrls([path])
+  return map.get(path)
+}
+
 export async function uploadPhotoMedia(
   userId: string,
   dimensionKey: string,

@@ -1,6 +1,8 @@
 import { BookOpen, Loader2, Mic, MoreHorizontal, Pause, Play, SkipBack, SkipForward, Trash2, X } from 'lucide-react'
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { deleteScript, uploadScriptCover, type AffirmationScriptWithGoal } from '../lib/scripts'
+import { pastelOf } from '../lib/color'
+import type { CoverStatus } from '../lib/useCoverUrl'
 import TeleprompterRecorder from './TeleprompterRecorder'
 
 function formatTime(seconds: number): string {
@@ -14,6 +16,8 @@ interface Props {
   userId: string
   script: AffirmationScriptWithGoal
   coverUrl?: string
+  /** Estado de la portada (la resuelve useCoverUrl). */
+  coverStatus: CoverStatus
   isPlaying: boolean
   isCurrent: boolean
   currentTime: number
@@ -32,6 +36,7 @@ export default function AffirmationCard({
   userId,
   script,
   coverUrl,
+  coverStatus,
   isPlaying,
   isCurrent,
   currentTime,
@@ -50,6 +55,8 @@ export default function AffirmationCard({
   const [showTeleprompter, setShowTeleprompter] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // URL cuyo <img> falló al cargar (404, devolvió HTML, imagen corrupta…). Va ligada a la URL: al cambiar de portada se reinicia.
+  const [failedCoverUrl, setFailedCoverUrl] = useState<string | null>(null)
 
   const coverInputRef = useRef<HTMLInputElement>(null)
   const closeBtnRef = useRef<HTMLButtonElement>(null)
@@ -118,10 +125,28 @@ export default function AffirmationCard({
       <h2 className="affirmation-card-title">{script.title}</h2>
 
       <div className="affirmation-card-cover">
-        {coverUrl ? (
-          <img src={coverUrl} alt="" className="affirmation-cover-img" />
-        ) : (
+        {coverStatus === 'ready' && coverUrl && failedCoverUrl !== coverUrl ? (
+          <img
+            key={coverUrl}
+            src={coverUrl}
+            alt=""
+            className="affirmation-cover-img"
+            onError={() => setFailedCoverUrl(coverUrl)}
+          />
+        ) : coverStatus === 'none' ? (
           <div className="affirmation-cover-placeholder">Sin portada</div>
+        ) : coverStatus === 'loading' ? (
+          <div className="affirmation-cover-placeholder" aria-busy="true" />
+        ) : (
+          // Tiene portada pero no se pudo cargar: fondo del color del área en lugar de un cuadro roto.
+          <div
+            className="affirmation-cover-fallback"
+            style={{
+              background: script.goal?.dimension?.color_hex
+                ? `linear-gradient(135deg, ${pastelOf(script.goal.dimension.color_hex, 35)}, ${script.goal.dimension.color_hex})`
+                : undefined,
+            }}
+          />
         )}
       </div>
 
@@ -139,7 +164,7 @@ export default function AffirmationCard({
           onClick={() => coverInputRef.current?.click()}
           disabled={coverBusy}
         >
-          {coverBusy ? 'Subiendo...' : coverUrl ? 'Cambiar portada' : '+ Subir portada'}
+          {coverBusy ? 'Subiendo...' : coverStatus !== 'none' ? 'Cambiar portada' : '+ Subir portada'}
         </button>
         <button type="button" className="affirmation-read-btn" onClick={() => setShowMenu(true)}>
           <BookOpen size={16} strokeWidth={1.75} />

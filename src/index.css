@@ -1363,6 +1363,14 @@ h4 {
   color: var(--text-dim);
 }
 
+/* Portada que no cargó: fondo del color del área (el degradado se pone en línea con el color_hex) */
+.affirmation-cover-fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
 .affirmation-card-actions-row {
   display: flex;
   align-items: center;
