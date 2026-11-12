@@ -14,13 +14,14 @@ import GoalDetail from './pages/GoalDetail'
 import Afirmaciones from './pages/Afirmaciones'
 
 export default function App() {
-  const { session, loading } = useAuth()
+  const { session, loading, preparingDemo } = useAuth()
 
   if (loading) {
     return <div className="app-loading">Cargando...</div>
   }
 
-  if (!session) {
+  // Mientras se prepara la demo ya hay sesión, pero no se entra hasta que termine el reset de datos.
+  if (!session || preparingDemo) {
     return <Login />
   }
 

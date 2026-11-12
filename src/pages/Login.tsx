@@ -1,14 +1,25 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { isDemoAvailable } from '../lib/demoSession'
 
 export default function Login() {
-  const { signIn, signUp } = useAuth()
+  const { signIn, signUp, enterDemo, preparingDemo } = useAuth()
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  // El botón "Probar demo" solo aparece si el servidor confirma que la demo está disponible (DEMO_PASSWORD configurada).
+  const [demoAvailable, setDemoAvailable] = useState(false)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    isDemoAvailable(controller.signal).then((available) => {
+      if (!controller.signal.aborted) setDemoAvailable(available)
+    })
+    return () => controller.abort()
+  }, [])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -24,6 +35,13 @@ export default function Login() {
       setInfo('Cuenta creada. Revisa tu correo para confirmar el registro.')
     }
     setSubmitting(false)
+  }
+
+  async function handleDemo() {
+    setError(null)
+    setInfo(null)
+    const result = await enterDemo()
+    if (result.error) setError(result.error)
   }
 
   return (
@@ -61,9 +79,18 @@ export default function Login() {
         {error && <p className="auth-error">{error}</p>}
         {info && <p className="auth-info">{info}</p>}
 
-        <button type="submit" disabled={submitting}>
+        <button type="submit" disabled={submitting || preparingDemo}>
           {submitting ? 'Procesando...' : mode === 'signin' ? 'Entrar' : 'Registrarme'}
         </button>
+
+        {demoAvailable && (
+          <div className="auth-demo">
+            <button type="button" className="auth-demo-btn" onClick={handleDemo} disabled={submitting || preparingDemo}>
+              {preparingDemo ? 'Preparando la demo...' : 'Probar demo'}
+            </button>
+            <p className="auth-demo-hint">Explora la app con datos de ejemplo, sin registrarte.</p>
+          </div>
+        )}
 
         <button
           type="button"

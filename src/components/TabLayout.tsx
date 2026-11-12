@@ -1,6 +1,7 @@
 import { Dumbbell, Home, LayoutGrid, Sparkles, Trophy } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { isDemoEmail } from '../lib/demo'
 
 const TABS = [
   { to: '/', label: 'Inicio', icon: Home, end: true },
@@ -11,19 +12,26 @@ const TABS = [
 ]
 
 export default function TabLayout() {
-  const { signOut } = useAuth()
+  const { signOut, user } = useAuth()
 
   return (
     <div className="app-shell">
-      <header className="app-header">
-        <div className="app-brand">
-          <img src="/logo-brand.png" alt="" className="app-logo" />
-          <span className="app-title brand-wordmark">Gemas</span>
-        </div>
-        <button className="signout-btn" onClick={signOut}>
-          Salir
-        </button>
-      </header>
+      <div className="app-top">
+        {isDemoEmail(user?.email) && (
+          <div className="demo-banner" role="status">
+            Modo demo: los cambios se reinician en cada entrada.
+          </div>
+        )}
+        <header className="app-header">
+          <div className="app-brand">
+            <img src="/logo-brand.png" alt="" className="app-logo" />
+            <span className="app-title brand-wordmark">Gemas</span>
+          </div>
+          <button className="signout-btn" onClick={signOut}>
+            Salir
+          </button>
+        </header>
+      </div>
 
       <main className="app-content">
         <Outlet />
