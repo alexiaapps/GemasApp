@@ -108,8 +108,8 @@ as $$
      and p_status in ('ok', 'error');
 $$;
 
-revoke all on function public.reserve_ai_generation(text, integer, integer) from public;
-revoke all on function public.finish_ai_generation(uuid, text, integer, integer) from public;
+revoke all on function public.reserve_ai_generation(text, integer, integer) from public, anon;
+revoke all on function public.finish_ai_generation(uuid, text, integer, integer) from public, anon;
 grant execute on function public.reserve_ai_generation(text, integer, integer) to authenticated;
 grant execute on function public.finish_ai_generation(uuid, text, integer, integer) to authenticated;
 

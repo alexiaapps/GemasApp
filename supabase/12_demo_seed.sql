@@ -56,8 +56,9 @@ begin
   end if;
 end $$;
 
-revoke all on function public._demo_goal(uuid, text, text, text, timestamptz) from public;
-revoke all on function public._demo_sub(uuid, uuid, text, text, text, integer, timestamptz, date) from public;
+-- Supabase da EXECUTE por defecto a anon y authenticated, así que no basta con revocar a public.
+revoke all on function public._demo_goal(uuid, text, text, text, timestamptz) from public, anon, authenticated;
+revoke all on function public._demo_sub(uuid, uuid, text, text, text, integer, timestamptz, date) from public, anon, authenticated;
 
 -- ---------- función principal ----------
 create or replace function public.reset_demo_data()
@@ -225,7 +226,7 @@ Mi calma es mi centro. Respiro hondo, me suelto y me quedo aquí, en paz, el tie
   from generate_series(0, 6) as d;
 end $$;
 
-revoke all on function public.reset_demo_data() from public;
+revoke all on function public.reset_demo_data() from public, anon;
 grant execute on function public.reset_demo_data() to authenticated;
 
 commit;
