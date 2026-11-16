@@ -23,7 +23,7 @@ SQL to build the FitTrack database from scratch: the base schema followed by its
 
 1. Create a project at [supabase.com](https://supabase.com) and make sure the **Email** provider is enabled (Authentication → Providers).
 2. Open **SQL Editor** and run each file, one at a time, in order: `01` → `12`. There is no `00`; `02` must run before `03`.
-3. Before running `12_demo_seed.sql`, create the demo user in **Authentication → Users → Add user** with the email `demo@example.com` and **Auto Confirm User** checked. Use a password of your own and set the same value as the `DEMO_PASSWORD` environment variable on the server (see `.env.local.example`).
+3. Before running `12_demo_seed.sql`, create the demo user in **Authentication → Users → Add user** with the email `demo@example.com` and **Auto Confirm User** checked. Use a password of your own and set the same value as the `DEMO_PASSWORD` environment variable on the server (see `.env.example`).
 4. Copy the project URL and anon key into `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
 
 The demo data is reloaded every time someone signs in with **Probar demo** (the app calls `reset_demo_data()`), so no manual seeding step is needed.
