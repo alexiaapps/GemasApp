@@ -1,96 +1,87 @@
-# Gemas
+# Gemas 💎
 
-Tracker de entrenamiento y gamificación de vida personal. React + Vite + TypeScript + Supabase, configurado como PWA instalable.
+**Despierta tu diamante interior · Awaken your inner diamond**
 
-## Setup local
+A gamified life-goals app that turns your goals into weekly actions and rewards you for showing up.
 
-1. Instala dependencias:
+**Live demo:** https://gemas-app.vercel.app (click "Probar demo", no sign-up needed)
 
-   ```bash
-   npm install
-   ```
+> The app is in Spanish because I built it for myself and for Mexican users.
 
-2. Crea `.env.local` a partir del ejemplo y completa con los datos de tu proyecto de Supabase (Project Settings → API):
+## The problem
 
-   ```bash
-   cp .env.local.example .env.local
-   ```
+We have systems to study, to work and to produce, but no system to grow as people. Most goal apps either track tasks or punish you with streaks, and people drop their goals within weeks.
 
-   ```
-   VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
-   VITE_SUPABASE_ANON_KEY=tu-anon-key
-   ```
+## Validating it before writing code
 
-   La `anon key` es segura para exponer en el cliente siempre que tengas RLS activado en tus tablas (que ya es el caso).
+I launched a landing page with a bilingual survey and got real answers about why people struggle with their goals:
 
-3. Si vas a usar generación de guiones con IA (ver sección **API de Anthropic** abajo), agrega también en el mismo `.env.local`:
+- 43 people answered the survey and 23 signed up for the beta.
+- Most people keep a goal for only 2 to 4 weeks before giving up.
+- Besides lack of discipline, the most common barriers were not knowing where to start and getting lost in the process, which is the structure Gemas provides.
+- Most people only sometimes or never have someone holding them accountable.
 
-   ```
-   ANTHROPIC_API_KEY=sk-ant-...
-   ```
+## How it works
 
-4. Corre el servidor de desarrollo:
+- **12 life areas** (health, career, finances, relationships…), each with its own gem color.
+- **Goals → sub-goals → gems.** Every big goal breaks into sub-goals, either one-time actions or weekly habits. Progress earns gems.
+- **Growth wheel.** Shows where you're investing your energy (weekly, monthly or all-time). Completed goals become badges, with a history of the sub-goals that got you there.
+- **Training and daily log.** Weekly programs with a rest timer, plus a daily check for protein and steps. All of it earns gems in the Health area.
+- **AI affirmations.** For any goal, Claude writes a personal script in first person and present tense, as if you'd already achieved it. Read it as a teleprompter or record it in your own voice.
 
-   ```bash
-   npm run dev
-   ```
+## Product decisions
 
-   Esto sirve el frontend (Vite), pero **no** ejecuta las funciones serverless de `/api`. Para probar esas rutas en local, ver la sección de abajo.
+- **No streaks or XP.** Gems reward effort without punishing a bad day.
+- **A habit earns gems only when the whole week is completed**, not per check-in.
+- **The prompt was iterated** so scripts feel personal and sensory, not generic.
 
-## Estructura
+## How I built it
 
-- `src/lib/supabase.ts` — cliente de Supabase.
-- `src/context/AuthContext.tsx` — sesión y auth (login/registro/logout con email+password).
-- `src/pages/` — las pestañas: Inicio, Entrenamiento, Logros, Áreas, Afirmaciones.
-- `src/components/TabLayout.tsx` — shell con navegación inferior tipo app móvil.
-- `api/` — funciones serverless de Vercel (código de servidor, nunca se manda al navegador).
+Problem → requirements → hand sketches → prompts to Claude Code → shipped app.
 
-## PWA
+I defined the problem and turned it into features and requirements, sketched every screen by hand, then turned those sketches into precise prompts for Claude Code, reviewing the code and security at every step.
 
-Configurada con `vite-plugin-pwa` (manifest + service worker con auto-update). Los íconos (`public/pwa-192x192.png`, `public/pwa-512x512.png`, `public/apple-touch-icon.png`, `public/favicon.png`) se generan desde el logo real (`scripts/gemas-logo-original.png`) con `node scripts/generate-icons.mjs` (usa `sharp`). Si el logo cambia, reemplaza ese archivo fuente y vuelve a correr el script.
+## Tech stack
 
-Para probar la instalación en el celular, necesitas servir la build por HTTPS (Vercel lo da gratis) o usar `npm run build && npm run preview` en la misma red y acceder desde el celular a la IP local.
+| Layer | Tools |
+|---|---|
+| Frontend | React, TypeScript, Vite (installable PWA) |
+| Backend | Supabase (Postgres, auth, storage) |
+| AI | Claude (Anthropic API), called from a serverless function |
+| Hosting | Vercel |
 
-## API de Anthropic (generación de guiones con IA)
+## Security and cost
 
-La API key de Anthropic es un secreto de servidor — **nunca** lleva el prefijo `VITE_` (esas sí se empaquetan en el JS que descarga el navegador). Vive solo en `process.env.ANTHROPIC_API_KEY`, leída exclusivamente desde funciones serverless en `api/` (ej. `api/generate-script.ts`). El frontend nunca la ve; solo hace `fetch('/api/generate-script', { method: 'POST', headers: { Authorization: 'Bearer <access_token>' }, body: ... })`.
+- **Row-level security (RLS):** each user can only read and write their own data.
+- **API key server-side only:** the AI call runs in `api/generate-script.ts`, so the key never reaches the browser.
+- **Authenticated endpoint** with input validation and per-user rate limits, enforced atomically in the database.
+- **Spend cap** on the Anthropic account as a last line of defense.
+- **Demo mode:** a separate account with sample data that resets on every visit. Its password lives only on the server, and its AI quota is shared and small to cap cost.
 
-**Seguridad del endpoint (`api/generate-script.ts`):**
-- Exige una sesión válida de Supabase: lee `Authorization: Bearer <access_token>`, lo valida con `auth.getUser(token)` (cliente con la anon key, nunca `service_role`) y responde **401** si falta o es inválido. Esto ocurre antes de llamar a Anthropic. Si Supabase no responde, devuelve **503**.
-- Valida la entrada antes de llamar a Anthropic: `goalText` y `dimensionLabel` deben ser texto, con tope de 200 y 50 caracteres (**400** si no cumplen). Se quitan saltos de línea y comillas antes de ponerlos en el prompt.
-- **Cuota por usuario:** después de validar la sesión y la entrada, y antes de llamar a Anthropic, reserva un cupo con `rpc('reserve_ai_generation', { p_model, p_per_minute: 3, p_per_day: 20 })`. Si no hay cupo responde **429** con `reason` (`minute_limit` / `day_limit`) y un mensaje en español. Si la reserva falla, responde 500 y no llama a Anthropic (falla cerrada). Al terminar cierra la reserva con `rpc('finish_ai_generation', { p_id, p_status: 'ok' | 'error', p_input_tokens, p_output_tokens })`. Ambas funciones usan `auth.uid()`, así que se llaman con un cliente creado con la anon key y el token del usuario (nunca `service_role`). La tabla y las funciones viven en Supabase (`ai_generations`).
-- Modelo `claude-sonnet-5-5`, `max_tokens` 1200, con `timeout` y `maxRetries` en el cliente de Anthropic.
-- La función lee `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` del entorno del servidor, así que deben estar habilitadas en los mismos entornos de Vercel donde uses `/api` (Production y Preview).
+## What's next
 
-**Variables de entorno de la función:** `ANTHROPIC_API_KEY`, `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`
+- **Community:** squads where friends compete, stake their gems on their goals and verify each other's progress with photos, with AI pre-checking the evidence.
+- Evals to measure script quality across prompt versions.
+- Streaming responses to cut perceived latency (generation takes about 10 seconds today).
+- English version and App Store launch.
 
-**En desarrollo:** agrégala a tu `.env.local` (sin prefijo `VITE_`, ver arriba). Como `npm run dev` (Vite) no ejecuta las funciones de `/api`, para probarlas en local necesitas la CLI de Vercel, que sí simula el entorno serverless completo:
+## Run it locally
 
 ```bash
-npx vercel dev
+npm install
+cp .env.example .env.local   # add your own Supabase and Anthropic keys
+npm run dev
 ```
 
-La primera vez te pedirá loguearte (`vercel login`) y vincular el proyecto (`vercel link`) — ambos leen `.env.local` automáticamente para las funciones de `/api`.
+Environment variables:
 
-**En Vercel (producción):** Project Settings → **Environment Variables** → agrega `ANTHROPIC_API_KEY` con tu key real, marcada para los entornos que quieras (Production / Preview / Development). Después de guardarla hay que volver a desplegar (redeploy) para que la función serverless la recoja.
+| Variable | Where it runs | Required |
+|---|---|---|
+| `VITE_SUPABASE_URL` | Browser | Yes |
+| `VITE_SUPABASE_ANON_KEY` | Browser (public by design, protected by RLS) | Yes |
+| `ANTHROPIC_API_KEY` | Server only, never prefixed with `VITE_` | Yes, for AI scripts |
+| `DEMO_PASSWORD` | Server only | Only for the demo button |
 
-## Demo pública ("Probar demo")
+---
 
-El login tiene un botón **Probar demo** que entra a una cuenta de ejemplo sin registrarse. Piezas:
-
-- **`src/lib/demo.ts`**: constante `DEMO_EMAIL = 'demo@example.com'` y `isDemoEmail()`. Es un archivo compartido que importan el frontend y las funciones de `api/`, por eso no importa nada más. Las funciones de `api/` lo importan **con extensión `.js`** (`'../src/lib/demo.js'`): sin ella, el JS compilado por Vercel falla en producción con `ERR_MODULE_NOT_FOUND`.
-- **Variable de entorno `DEMO_PASSWORD`** (solo servidor, **sin prefijo `VITE_`**; en Vercel, Production y Preview): la contraseña de la cuenta demo. Nunca llega al navegador: solo la lee `api/demo-login.ts`, que no la devuelve ni la registra. Si no está definida, el endpoint responde 503 y el botón no aparece.
-- **`api/demo-login.ts`**: `GET` dice si la demo está disponible (200/503, sin tocar la contraseña); `POST` inicia sesión con la anon key (nunca `service_role`) y devuelve solo `{ access_token, refresh_token }`. **Límite contra abuso:** 10 llamadas por minuto por IP, en memoria de la instancia (ventana fija; Vercel sobrescribe `x-forwarded-for`, así que la IP no se puede falsear). En serverless cada instancia tiene su propia memoria, así que es un límite de mejor esfuerzo; si hiciera falta uno global, se puede añadir una regla de rate limiting en Vercel (Firewall).
-- **Flujo del botón:** `/api/demo-login` → `supabase.auth.setSession` → `rpc('reset_demo_data')` → entrar. Mientras dura, la app sigue mostrando el login ("Preparando la demo..."): no se entra a medias. Si algo falla, se cierra la sesión y se muestra un mensaje.
-- **Cierre de sesión local:** la cuenta demo es compartida, así que `Salir` y los fallos de la demo usan `signOut({ scope: 'local' })`; el cierre global (el predeterminado) revocaría la sesión de los demás visitantes.
-- **Banner:** con la sesión demo se muestra "Modo demo: los cambios se reinician en cada entrada."
-- **IA en la demo:** `api/generate-script.ts` limita la cuenta demo a **1 generación por minuto y 3 por día, compartidas entre todos los visitantes**, y responde 429 con "La demo llegó a su límite de generaciones de hoy. Crea tu cuenta o vuelve mañana." Los demás usuarios siguen con 3 por minuto y 20 por día.
-
-El usuario demo y la función `reset_demo_data` viven en Supabase (la función solo funciona si la llama ese usuario).
-
-## Deploy en Vercel
-
-1. Sube el repo a GitHub.
-2. En Vercel: **New Project** → importa el repo → framework preset "Vite" (autodetectado).
-3. Agrega las variables de entorno `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` y `ANTHROPIC_API_KEY` en Project Settings → Environment Variables.
-4. Deploy. `vercel.json` ya incluye el rewrite para que las rutas de React Router funcionen correctamente; las funciones en `api/` las detecta y despliega Vercel automáticamente, sin configuración extra.
+Designed and built by **Alexia Arteaga Mendoza** · alexiaarteaga2003@gmail.com
